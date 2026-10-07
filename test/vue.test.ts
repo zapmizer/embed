@@ -164,6 +164,97 @@ describe('useInboxHost + useInboxSlot', () => {
     )
   }
 
+  function mountSwappableSlot(shown: { value: boolean }, slotKey: { value: string }, person: { value: string | null }) {
+    const attached: HTMLElement[] = []
+    const detached: HTMLElement[] = []
+    const slots = new Map<string, HTMLElement>()
+
+    const Screen = defineComponent({
+      props: { inboxHost: { type: Object as () => InboxHost, required: true } },
+      setup(props) {
+        const spied: InboxHost = {
+          ...props.inboxHost,
+          attach: (element, nextPerson) => {
+            attached.push(element)
+            props.inboxHost.attach(element, nextPerson)
+          },
+          detach: (element) => {
+            detached.push(element)
+            props.inboxHost.detach(element)
+          },
+        }
+        const slot = useInboxSlot(spied, { person: () => person.value })
+
+        return () =>
+          shown.value
+            ? h('div', {
+                key: slotKey.value,
+                ref: (element) => {
+                  if (element instanceof HTMLElement) {
+                    slots.set(slotKey.value, element)
+                    slot.value = element
+                  } else {
+                    slot.value = null
+                  }
+                },
+              })
+            : h('p', 'Invite')
+      },
+    })
+
+    mount(
+      defineComponent({
+        setup() {
+          const inbox = useInboxHost({ brand: BRAND, openSession: sessions.openSession })
+
+          host = inbox.host
+
+          return () => h(Screen, { inboxHost: inbox.host })
+        },
+      }),
+    )
+
+    return { attached, detached, slots }
+  }
+
+  it('attaches when the slot element appears after the component mounted', async () => {
+    const shown = ref(false)
+
+    mountSwappableSlot(shown, ref('a'), ref('7:3'))
+    await nextTick()
+
+    expect(sessions.calls()).toBe(0)
+
+    shown.value = true
+    await nextTick()
+    sessions.resolve(0, session('a', true))
+    await settle()
+
+    expect(sessions.calls()).toBe(1)
+    expect(host?.element.style.visibility).toBe('')
+    expect(onlyFrame(host?.element ?? root)).toBeDefined()
+  })
+
+  it('detaches the previous slot element and attaches the new one without a new session', async () => {
+    const slotKey = ref('a')
+
+    const { attached, detached, slots } = mountSwappableSlot(ref(true), slotKey, ref('7:3'))
+    await nextTick()
+    sessions.resolve(0, session('a', true))
+    await settle()
+    const first = slots.get('a')
+
+    slotKey.value = 'b'
+    await nextTick()
+
+    expect(first).toBeDefined()
+    expect(detached).toContain(first as HTMLElement)
+    expect(attached.at(-1)).toBe(slots.get('b') as HTMLElement)
+    expect(attached.at(-1)).not.toBe(first)
+    expect(sessions.calls()).toBe(1)
+    expect(host?.element.style.visibility).toBe('')
+  })
+
   it('creates the host once at the root and opens nothing before the visit', async () => {
     mountApp(ref(false), ref('7:3'), ref(true))
     await nextTick()

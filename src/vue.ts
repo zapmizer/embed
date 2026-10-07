@@ -87,25 +87,31 @@ export function useInboxSlot(host: InboxHost, options: UseInboxSlotOptions): Ref
   const slot = ref<HTMLElement | null>(null)
   const isEnabled = (): boolean => toValue(options.enabled ?? true)
 
-  function attachIfEnabled(): void {
-    const element = slot.value
+  watch(
+    [slot, () => toValue(options.person), isEnabled],
+    ([element, person, enabled], [previousElement, previousPerson, wasEnabled]) => {
+      if (element !== previousElement) {
+        if (previousElement !== null) {
+          host.detach(previousElement)
+        }
 
-    if (element !== null && isEnabled()) {
-      host.attach(element, toValue(options.person))
-    }
-  }
-
-  onMounted(attachIfEnabled)
-
-  watch([() => toValue(options.person), isEnabled], ([person, enabled], [previousPerson, wasEnabled]) => {
-    if (enabled && person === null && previousPerson !== null) {
-      host.close()
-    } else if (enabled) {
-      attachIfEnabled()
-    } else if (wasEnabled) {
-      host.close()
-    }
-  })
+        if (element !== null && enabled) {
+          host.attach(element, person)
+        } else if (!enabled && wasEnabled) {
+          host.close()
+        }
+      } else if (enabled && person === null && previousPerson !== null) {
+        host.close()
+      } else if (enabled) {
+        if (element !== null) {
+          host.attach(element, person)
+        }
+      } else if (wasEnabled) {
+        host.close()
+      }
+    },
+    { flush: 'post' },
+  )
 
   onBeforeUnmount(() => {
     const element = slot.value
