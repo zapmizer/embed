@@ -16,6 +16,7 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
   let observer: ResizeObserver | null = null
   let cancelIdle: (() => void) | null = null
   let generation = 0
+  let destroyed = false
   let state: EmbedState = { status: 'closed', frame: 'none' }
 
   element.append(frameContainer, overlay)
@@ -91,7 +92,7 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
     hide()
   }
 
-  function open(nextPerson: string | null): Inbox {
+  function open(nextPerson: string | null): Inbox | null {
     generation += 1
     const mine = generation
 
@@ -121,12 +122,22 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
       },
     })
 
+    if (mine !== generation) {
+      created.destroy()
+
+      return null
+    }
+
     inbox = created
 
     return created
   }
 
   function attach(nextSlot: HTMLElement, nextPerson: string | null): void {
+    if (destroyed) {
+      return
+    }
+
     cancelIdleTimer()
 
     if (inbox !== null && inbox.state.status === 'closed') {
@@ -144,13 +155,17 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
 
     const current = inbox ?? open(nextPerson)
 
+    if (current === null) {
+      return
+    }
+
     follow(nextSlot)
     show()
     current.setVisible(true)
   }
 
   function detach(oldSlot: HTMLElement): void {
-    if (oldSlot !== slot) {
+    if (destroyed || oldSlot !== slot) {
       return
     }
 
@@ -162,6 +177,10 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
   }
 
   function close(): void {
+    if (destroyed) {
+      return
+    }
+
     const current = inbox
 
     teardown()
@@ -174,6 +193,7 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
 
   function destroy(): void {
     close()
+    destroyed = true
     window.removeEventListener('resize', measure)
     window.removeEventListener('scroll', measure, true)
     element.remove()
@@ -190,7 +210,11 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
     },
     attach,
     detach,
-    retry: () => inbox?.retry(),
+    retry: () => {
+      if (!destroyed) {
+        inbox?.retry()
+      }
+    },
     close,
     destroy,
   }

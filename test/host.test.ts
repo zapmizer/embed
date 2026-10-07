@@ -411,4 +411,51 @@ describe('inbox host for SPAs', () => {
       microtasks.restore()
     }
   })
+
+  it('does not leave a live inbox behind when the app closes the host from the first state', async () => {
+    host.destroy()
+    host = createInboxHost({
+      brand: BRAND,
+      openSession: sessions.openSession,
+      keepAlive: () => Promise.resolve(),
+      clock,
+      onState: (state) => {
+        states.push(state)
+
+        if (state.status === 'opening') {
+          host.close()
+        }
+      },
+    })
+
+    host.attach(slot.element, '7:3')
+    sessions.resolve(0, session('s1', true))
+    await settle()
+
+    expect(host.state).toEqual({ status: 'closed', frame: 'none' })
+    expect(isHidden()).toBe(true)
+    expect(framesIn(host.element)).toEqual([])
+    expect(clock.pending()).toBe(0)
+    expect(resizeObservers.active()).toEqual([])
+  })
+
+  it('ignores every call after destroy', async () => {
+    await visitLoaded()
+    host.destroy()
+    const reported = states.length
+
+    host.attach(slot.element, '7:3')
+    host.retry()
+    host.detach(slot.element)
+    host.close()
+    host.destroy()
+    clock.advance(30 * MINUTE)
+
+    expect(sessions.calls()).toBe(1)
+    expect(host.element.isConnected).toBe(false)
+    expect(framesIn(host.element)).toEqual([])
+    expect(host.state).toEqual({ status: 'closed', frame: 'none' })
+    expect(states).toHaveLength(reported)
+    expect(clock.pending()).toBe(0)
+  })
 })
