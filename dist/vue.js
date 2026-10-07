@@ -88,8 +88,10 @@ function useInboxSlot(host, options) {
     }
   }
   onMounted(attachIfEnabled);
-  watch([() => toValue(options.person), isEnabled], ([, enabled], [, wasEnabled]) => {
-    if (enabled) {
+  watch([() => toValue(options.person), isEnabled], ([person, enabled], [previousPerson, wasEnabled]) => {
+    if (enabled && person === null && previousPerson !== null) {
+      host.close();
+    } else if (enabled) {
       attachIfEnabled();
     } else if (wasEnabled) {
       host.close();
