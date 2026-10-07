@@ -10,6 +10,6 @@ Esta pasta vai junto com o código. Ao abrir pela tag que o app fixou (por exemp
 6. [Vue](vue.md): `EmbedConversation`, `useInboxHost` e `useInboxSlot`.
 7. [Logout e multi-aba](logout-e-multiaba.md): `endEmbeds`, `listenToLogout` e a caixa disputada entre abas.
 8. [Estados e erros](estados-e-erros.md): `EmbedState`, e a tabela de código, ação e texto padrão.
-9. [Testes no app](testes.md): como testar a integração sem a Parli nem o Zapmizer no ar.
+9. [Testes no app](testes.md): como testar a integração sem o Zapmizer no ar.
 
 Exemplos completos ficam em [`examples/`](../examples).

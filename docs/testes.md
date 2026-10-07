@@ -1,6 +1,6 @@
 # Testes no app
 
-A lib não fala com a rede: ela chama o `openSession` e o `keepAlive` do app e ouve `postMessage` do iframe. Num teste, o app troca os dois por funções falsas e manda as mensagens do iframe à mão, sem a Parli nem o Zapmizer no ar. Exemplo que roda: [`examples/vanilla/conversation.test.ts`](../examples/vanilla/conversation.test.ts).
+A lib não fala com a rede: ela chama o `openSession` e o `keepAlive` do app e ouve `postMessage` do iframe. Num teste, o app troca os dois por funções falsas e manda as mensagens do iframe à mão, sem o Zapmizer no ar. Exemplo que roda: [`examples/vanilla/conversation.test.ts`](../examples/vanilla/conversation.test.ts).
 
 ## Ambiente
 
@@ -27,7 +27,7 @@ Para testar o `openSession` de verdade do app (o que traduz o `fetch`), troque o
 
 ## As mensagens do iframe
 
-A lib só aceita uma mensagem que vem do `contentWindow` do iframe que ela montou, com a `origin` da sessão e `source: '${brand}-embed'`:
+A lib só aceita uma mensagem que vem do `contentWindow` do iframe que ela montou, com a `origin` da sessão e `source: 'zapmizer-embed'`:
 
 ```ts
 function fromIframe(container: HTMLElement, data: Record<string, unknown>) {
@@ -81,4 +81,4 @@ A caixa grava a retomada no `sessionStorage` da página. Para isolar os testes, 
 
 ## Entre um teste e outro
 
-Um embed que o teste não destruiu continua ouvindo as mensagens da janela e registrado para o logout da marca. Chame `destroy()` em cada embed (e no host) ao fim do teste e limpe o `document.body`.
+Um embed que o teste não destruiu continua ouvindo as mensagens da janela e registrado para o logout. Chame `destroy()` em cada embed (e no host) ao fim do teste e limpe o `document.body`.

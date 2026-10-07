@@ -26,7 +26,7 @@ conversation.destroy()
 | Opção | Obrigatória | O que faz |
 | --- | --- | --- |
 | `container` | sim | Elemento onde o iframe é inserido. |
-| `brand` | sim | `'zapmizer'` ou `'parli'`. Veja [a marca](comecando.md#a-marca). |
+| `brand` | sim | `'zapmizer'`. Veja [o `brand`](comecando.md#o-brand). |
 | `openSession` | sim | Pede uma sessão ao backend do app. Veja [Backend](backend.md). |
 | `onState` | sim | Recebe cada `EmbedState`. Veja [Estados e erros](estados-e-erros.md). |
 | `onResize` | não | Recebe a altura do conteúdo, crua, em pixels. |

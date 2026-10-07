@@ -30,7 +30,7 @@ import { createConversation } from '@zapmizer/embed/conversation'
 
 const conversation = createConversation({
   container: document.querySelector('#conversa'),
-  brand: 'zapmizer', // a Parli usa 'parli'
+  brand: 'zapmizer',
   openSession, // chama o endpoint de sessão do backend do app
   onState: (state) => render(state),
 })

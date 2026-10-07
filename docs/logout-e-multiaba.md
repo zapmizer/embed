@@ -18,9 +18,9 @@ async function logout() {
 
 `endEmbeds({ brand, storage?, broadcast? })`:
 
-- fecha toda caixa, host e conversa da marca nesta aba (o estado vira `closed`). Os embeds de outra marca ficam como estão;
-- apaga toda retomada `${brand}-inbox:*`;
-- avisa as outras abas em `BroadcastChannel('${brand}-embed-logout')`. Cada aba que chamou `listenToLogout` fecha os embeds dela e apaga a retomada;
+- fecha toda caixa, host e conversa do Zapmizer nesta aba (o estado vira `closed`);
+- apaga toda retomada `zapmizer-inbox:*`;
+- avisa as outras abas em `BroadcastChannel('zapmizer-embed-logout')`. Cada aba que chamou `listenToLogout` fecha os embeds dela e apaga a retomada;
 - um embed que falha ao fechar não impede os outros: todos fecham e a retomada é apagada.
 
 `listenToLogout({ brand, storage? })` devolve uma função que para de ouvir.

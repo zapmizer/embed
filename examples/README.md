@@ -10,6 +10,6 @@ Curtos e completos. Os arquivos `.ts` compilam contra `src/` (`bun run typecheck
 | [`laravel/`](laravel) | O endpoint de sessão e o keepalive no backend. |
 | [`node/`](node) | O mesmo endpoint em JavaScript puro, com `fetch`. |
 
-Os exemplos usam `brand: 'zapmizer'` e a API em `https://app.zapmizer.com/api/`. A Parli usa `brand: 'parli'` e `https://app.parlichat.com/api/`.
+Os exemplos usam `brand: 'zapmizer'` e a API em `https://app.zapmizer.com/api/`.
 
 O contrato do backend está em [`docs/backend.md`](../docs/backend.md).

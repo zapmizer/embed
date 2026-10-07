@@ -25,7 +25,7 @@ inbox.destroy()
 | Opção | Obrigatória | O que faz |
 | --- | --- | --- |
 | `container` | sim | Elemento onde o iframe é inserido. |
-| `brand` | sim | `'zapmizer'` ou `'parli'`. |
+| `brand` | sim | `'zapmizer'`. |
 | `person` | sim | Quem pode retomar a caixa nesta aba, ou `null`. Veja [Retomada](#retomada). |
 | `openSession` | sim | Pede uma sessão ao backend do app. |
 | `onState` | sim | Recebe cada `EmbedState`. |
@@ -42,9 +42,9 @@ O iframe da caixa recebe `allow="clipboard-write; microphone; fullscreen; autopl
 
 Abrir uma caixa do zero é pesado. Quando o backend devolve `resume_url` e `resume_until`, a lib guarda essa entrada assim que a caixa fica pronta e, na próxima abertura na mesma aba (um F5, por exemplo), monta o iframe direto nela, sem pedir sessão nova.
 
-- A entrada fica na chave `${brand}-inbox:${person}`. `person` identifica quem pode retomar; use algo como `${user.id}:${team.id}`, para que a troca de time não reabra a caixa do outro time.
+- A entrada fica na chave `zapmizer-inbox:${person}`. `person` identifica quem pode retomar; use algo como `${user.id}:${team.id}`, para que a troca de time não reabra a caixa do outro time.
 - Com `person: null` (ou `''`), a retomada fica desligada: nada é lido, gravado ou apagado.
-- Ao abrir, a lib apaga as entradas da mesma marca que são de outra pessoa.
+- Ao abrir, a lib apaga as entradas de outra pessoa.
 - Uma entrada que vence em menos de dois minutos, ou cuja `url` não é da `origin` guardada, é ignorada.
 - Se a caixa retomada responde `session_expired` antes de ficar pronta, a lib esquece a entrada e pede uma sessão nova, uma vez.
 - Se a caixa retomada não fica pronta no prazo, a entrada é esquecida.
@@ -66,7 +66,7 @@ const keepAlive: KeepAlive = async () => {
 }
 ```
 
-- Rejeitar com `{ status: 401 }` ou `{ status: 419 }` fecha a caixa (`closed`) e apaga toda retomada da marca.
+- Rejeitar com `{ status: 401 }` ou `{ status: 419 }` fecha a caixa (`closed`) e apaga toda retomada.
 - Qualquer outra falha é ignorada. Erro do axios funciona direto.
 - Sem `keepAlive`, nada é pingado.
 

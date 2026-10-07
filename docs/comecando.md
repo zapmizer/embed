@@ -1,6 +1,6 @@
 # Começando
 
-A lib abre a conversa e a caixa de entrada do Zapmizer (ou da Parli) num iframe e segue o protocolo do embed: eventos, reabertura, retomada, keepalive e logout. Ela não tem dependência de runtime nem estilo visual. Entrega o estado, e o app desenha carregando e erro.
+A lib abre a conversa e a caixa de entrada do Zapmizer num iframe e segue o protocolo do embed: eventos, reabertura, retomada, keepalive e logout. Ela não tem dependência de runtime nem estilo visual. Entrega o estado, e o app desenha carregando e erro.
 
 ## Instalação
 
@@ -62,9 +62,9 @@ const conversation = createConversation({
 - Para recusar, rejeita com `{ status, code, retryAfter? }`. Qualquer outro erro conta como falha de rede (`unavailable`).
 - Erro do axios funciona direto, sem conversão. Com `response`, o status vem de `response.status` e o código de `response.data.code` (o `code` do próprio erro, como `ERR_BAD_REQUEST`, é ignorado). Sem `response` (rede caída, timeout), vira `unavailable`. O `Retry-After` só é lido no formato `{ status, code, retryAfter }`.
 
-## A marca
+## O `brand`
 
-A lib não tem marca. `brand` é qualquer texto: ele vira o `source` esperado nas mensagens do iframe (`${brand}-embed`), o prefixo da retomada (`${brand}-inbox:`) e o canal de logout (`${brand}-embed-logout`). Os exemplos desta doc usam `'zapmizer'`; a Parli usa `'parli'`.
+Passe `brand: 'zapmizer'` em todo embed e no logout. Ele vira o `source` esperado nas mensagens do iframe (`zapmizer-embed`), o prefixo da retomada (`zapmizer-inbox:`) e o canal de logout (`zapmizer-embed-logout`).
 
 ## Callbacks que lançam
 

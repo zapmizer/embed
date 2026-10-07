@@ -40,7 +40,7 @@ A reabertura automática é da lib e nunca depende da `action`. `retryAfter`, qu
 
 ## Códigos
 
-`defaultMessages` (de `@zapmizer/embed/errors`) traz um texto pt-BR sem marca por código. Use se quiser; o texto é do app. `actionFor(code)` devolve a ação de um código.
+`defaultMessages` (de `@zapmizer/embed/errors`) traz um texto pt-BR por código. Use se quiser; o texto é do app. `actionFor(code)` devolve a ação de um código.
 
 | `code` | `action` | Texto padrão | De onde vem |
 | --- | --- | --- | --- |

@@ -2,7 +2,7 @@
 // Funciona em qualquer servidor com Request/Response da Web (Bun, Deno, Node 18+, Hono, Next route handlers).
 // Antes de chamar, o app autentica o usuário e confere o CSRF, como em qualquer POST da sessão dele.
 
-const API = 'https://app.zapmizer.com/api/' // Parli: https://app.parlichat.com/api/
+const API = 'https://app.zapmizer.com/api/'
 
 export type EmbedSessionInput = {
   token: string // a chave da integração com o Zapmizer, guardada no servidor do app

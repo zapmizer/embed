@@ -1,9 +1,9 @@
 # Backend: o endpoint de sessão
 
-O iframe só abre com uma URL de sessão de uso único, criada pela API da marca com a chave da integração. A chave fica no servidor do app. O navegador chama um endpoint do próprio app, e esse endpoint chama a API.
+O iframe só abre com uma URL de sessão de uso único, criada pela API do Zapmizer com a chave da integração. A chave fica no servidor do app. O navegador chama um endpoint do próprio app, e esse endpoint chama a API.
 
 ```
-navegador ── openSession() ──▶ backend do app ── POST {API}/embed/sessions ──▶ API do Zapmizer/Parli
+navegador ── openSession() ──▶ backend do app ── POST {API}/embed/sessions ──▶ API do Zapmizer
           ◀── { url, origin, … } ──             ◀── 201 { url, resume_url?, … } ──
 ```
 
@@ -11,7 +11,7 @@ Este é o ponto que mais confunde. A lib não fala com a API: ela lê a resposta
 
 ## A chamada à API
 
-`POST {base}/embed/sessions`, com `Authorization: Bearer <chave da integração>` e `Accept: application/json`. A base é `https://app.zapmizer.com/api/` no Zapmizer e `https://app.parlichat.com/api/` na Parli.
+`POST {base}/embed/sessions`, com `Authorization: Bearer <chave da integração>` e `Accept: application/json`. A base é `https://app.zapmizer.com/api/`.
 
 | Campo | Caixa | Conversa |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ Sucesso: `200` com
 ```
 
 - `url` é a da API, sem mexer.
-- `origin` é a origem do app da marca, de onde o iframe manda as mensagens: `https://app.zapmizer.com`, ou `https://app.parlichat.com` na Parli. Calcule a partir da `url` (esquema, host e porta não padrão), sem fixar no código. A lib confere: se a origem da `url` não for igual a `origin`, o estado vira `unavailable`, e mensagens de outra origem são ignoradas.
+- `origin` é a origem do app do Zapmizer, de onde o iframe manda as mensagens: `https://app.zapmizer.com`. Calcule a partir da `url` (esquema, host e porta não padrão), sem fixar no código. A lib confere: se a origem da `url` não for igual a `origin`, o estado vira `unavailable`, e mensagens de outra origem são ignoradas.
 - `resume_url` e `resume_until` só servem à caixa (retomada, veja [Caixa de entrada](caixa-de-entrada.md#retomada)). Sem eles, ou com `null`, a caixa funciona e só não retoma. `expires_at` não precisa ir para o front.
 
 Recusa: o status HTTP e `{ "code": "<motivo>" }`, mais o `Retry-After` no `429`.
