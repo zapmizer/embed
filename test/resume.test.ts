@@ -7,7 +7,7 @@ const NOW = Date.parse('2026-09-30T20:00:00Z')
 const MINUTE = 60 * 1000
 const ENTRY = { url: 'http://localhost:8001/chats?embed_inbox=abc', origin: 'http://localhost:8001', until: '2026-09-30T22:00:00+00:00' }
 const ANA = resumeKey('zapmizer', '7:3')
-const LEASE_DRAFT = 'resolaris.lease-contract-draft.v1:7:3'
+const APP_DRAFT = 'app.draft.v1:7:3'
 
 function entryEndingIn(offset: number) {
   return { ...ENTRY, until: new Date(NOW + offset).toISOString() }
@@ -121,11 +121,11 @@ describe('way back to the inbox', () => {
     ['pruning', (storage: ResumeStorage) => forgetOtherResumes(storage, 'zapmizer', ANA)],
     ['signing out', (storage: ResumeStorage) => forgetAllResumes(storage, 'zapmizer')],
   ])('keeps what other screens and brands left in the tab when %s', (_, forget) => {
-    const storage = memoryStorage({ [LEASE_DRAFT]: '{}', 'parli-inbox:7:3': JSON.stringify(ENTRY), 'zapmizer-inbox:8:3': JSON.stringify(ENTRY) })
+    const storage = memoryStorage({ [APP_DRAFT]: '{}', 'parli-inbox:7:3': JSON.stringify(ENTRY), 'zapmizer-inbox:8:3': JSON.stringify(ENTRY) })
 
     forget(storage)
 
-    expect(memoryKeys(storage)).toEqual([LEASE_DRAFT, 'parli-inbox:7:3'])
+    expect(memoryKeys(storage)).toEqual([APP_DRAFT, 'parli-inbox:7:3'])
   })
 
   it.each([
