@@ -4,16 +4,10 @@ Abre a conversa e a caixa de entrada da Parli/Zapmizer num iframe e segue o prot
 
 ## Instalação
 
-O `dist/` vem commitado, porque instalar por git URL não roda o build.
+O `dist/` vem commitado, porque instalar pelo GitHub não roda o build. Fixe a versão pela tag:
 
 ```bash
-bun add git+ssh://git@github.com/zapmizer/embed.git
-```
-
-Enquanto o repo só existe na máquina:
-
-```bash
-bun add git+file:///home/aqu1les/zapmizer/embed
+bun add github:zapmizer/embed#v0.1.0
 ```
 
 Cada módulo tem o seu caminho; não existe import da raiz.
@@ -250,7 +244,7 @@ async function logout() {
 
 ```bash
 bun install
-CLAUDECODE=1 bun test
+bun run test
 bun run typecheck
 bun run build
 ```
