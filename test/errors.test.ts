@@ -58,6 +58,41 @@ describe('refusal from whatever openSession rejected with', () => {
   })
 })
 
+describe('refusal from an axios-shaped rejection', () => {
+  it('reads the status from the response and the code from its body', () => {
+    const error = { isAxiosError: true, code: 'ERR_BAD_REQUEST', status: 422, response: { status: 422, data: { code: 'reauth_required' } } }
+
+    expect(toRefusal(error)).toEqual({ status: 422, code: 'reauth_required' })
+    expect(codeForRefusal(toRefusal(error))).toBe('reauth_required')
+    expect(actionFor(codeForRefusal(toRefusal(error)))).toBe('reconnect')
+  })
+
+  it('ignores the error code when the body has none', () => {
+    const error = { isAxiosError: true, code: 'ERR_BAD_RESPONSE', response: { status: 503, data: '<html>' } }
+
+    expect(toRefusal(error)).toEqual({ status: 503, code: null })
+    expect(codeForRefusal(toRefusal(error))).toBe('unavailable')
+  })
+
+  it('maps an expired app session through the response status', () => {
+    expect(codeForRefusal(toRefusal({ isAxiosError: true, code: 'ERR_BAD_REQUEST', response: { status: 419, data: { message: 'CSRF token mismatch.' } } }))).toBe('app_session_expired')
+  })
+
+  it('treats a response without a usable status as a network failure', () => {
+    expect(toRefusal({ response: { status: 'nope', data: null } })).toEqual({ status: null, code: null })
+  })
+
+  it.each([
+    ['an axios network error', { isAxiosError: true, code: 'ERR_NETWORK', message: 'Network Error', request: {} }],
+    ['an axios timeout', { isAxiosError: true, code: 'ECONNABORTED', status: undefined }],
+    ['a request that never got a response', { code: 'ERR_NETWORK', request: {} }],
+  ])('turns %s into a network failure that offers a retry', (_, error) => {
+    expect(toRefusal(error)).toEqual({ status: null, code: null })
+    expect(codeForRefusal(toRefusal(error))).toBe('unavailable')
+    expect(actionFor(codeForRefusal(toRefusal(error)))).toBe('retry')
+  })
+})
+
 describe('default messages', () => {
   const codes = [
     'session_expired',
