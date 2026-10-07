@@ -250,6 +250,28 @@ describe('useInboxHost + useInboxSlot', () => {
     expect(sessions.calls()).toBe(1)
   })
 
+  it.each([
+    ['the slot alone handles it', false],
+    ['the host also watches the person', true],
+  ])('closes without opening a second session when the mounted slot person becomes null and %s', async (_, hostWatches) => {
+    const person = ref<string | null>('u1')
+
+    mountApp(ref(true), person, ref(true), hostWatches)
+    await nextTick()
+    sessions.resolve(0, session('a', true))
+    await settle()
+    postFrom(onlyFrame(host?.element ?? root), { type: 'ready' })
+
+    person.value = null
+    await nextTick()
+    await settle()
+
+    expect(host?.state).toEqual({ status: 'closed', frame: 'none' })
+    expect(sessions.calls()).toBe(1)
+    expect(framesIn(host?.element ?? root)).toEqual([])
+    expect(window.sessionStorage.getItem('parli-inbox:u1')).not.toBeNull()
+  })
+
   it('keeps the inbox the slot opened for the new person when the host also watches the person', async () => {
     const person = ref<string | null>('7:3')
 
