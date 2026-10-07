@@ -54,6 +54,8 @@ const keepAlive: KeepAlive = async () => {
 
 - `openSession` resolve com `{ url, origin, resume_url?, resume_until? }`, que é a resposta do backend do app. Para recusar, rejeita com `{ status, code, retryAfter? }`; qualquer outro erro conta como falha de rede (`unavailable`). Uma resposta sem `url` http(s) na `origin` informada também vira `unavailable`.
 - `keepAlive` rejeita com `{ status }`. `401` e `419` fecham a caixa e apagam toda retomada; o resto é ignorado.
+- Erro do axios funciona direto, sem conversão: com `response`, o status vem de `response.status` e o código de `response.data.code` (o `code` do próprio erro, como `ERR_BAD_REQUEST`, é ignorado). Sem `response` (rede caída, timeout), vira falha de rede: `unavailable` com `retry`. O `Retry-After` só é lido no formato `{ status, code, retryAfter }`.
+- Um `onState`, `onResize` ou `onMessageSent` que lança não quebra a lib: o estado segue, a limpeza acontece e o erro é relançado depois, numa microtask, para aparecer no console ou no monitor de erros do app.
 
 ## Estado
 
@@ -136,6 +138,8 @@ const inbox = useInboxHost({
   brand: 'parli',
   openSession,
   keepAlive,
+  person: () => (user.value ? `${user.value.id}:${user.value.current_team.id}` : null),
+  enabled: () => page.props.zapmizer_inbox === 'available',
   frame: { configure: (iframe) => Object.assign(iframe.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', border: '0' }) },
 })
 
@@ -171,6 +175,7 @@ const slot = useInboxSlot(inbox.host, { person, enabled })
 
 - A lib não estiliza o iframe nem o `overlay`. Os dois precisam de `position: absolute; inset: 0`: no iframe isso vai pelo `frame.configure`, no `overlay` direto no elemento. Ligue `pointer-events` no conteúdo que o app desenha dentro do `overlay`.
 - `enabled` cobre o acesso que cai e volta sem sair da tela: com `false` o host fecha (some, sem `pointer-events`), e com `true` volta retomando a caixa.
+- Passe o mesmo `person` e `enabled` para o `useInboxHost` na raiz. Assim o host fecha mesmo com o usuário em outra tela, onde nenhum slot está montado: troca de time, outro usuário, logout (`person` vira `null`) ou acesso indisponível (`enabled` vira `false`). A caixa é destruída sem pedir sessão nova, e a retomada fica guardada.
 - Com o host `closed` (logout, keepalive `401/419`, 30 min oculto) o `overlay` some junto. Para avisar que a sessão caiu, desenhe na própria página lendo `inbox.state`.
 
 ### Vue: conversa
@@ -186,6 +191,30 @@ import { EmbedConversation } from '@zapmizer/embed/vue'
 ```
 
 - `EmbedConversation` lê `brand`, `frame` e `readyTimeoutMs` uma vez, na montagem. Para mudá-los, remonte o componente com um `key`.
+- O slot padrão recebe `{ state, retry, reopen, height }`: `state` é o `EmbedState`, `retry` e `reopen` são os da conversa, e `height` é a última altura crua que a conversa informou (`null` antes da primeira).
+- O evento `message-sent` traz o `message_id` da mensagem que o atendente mandou.
+
+Receita de altura: o componente renderiza uma `div` sem estilo para o iframe, seguida do slot. Envolva o componente num wrapper `position: relative` e dê a ele a altura limitada pelo app, desenhando no slot um espaçador com essa altura. O iframe vai em `position: absolute; inset: 0` pelo `frame.configure` e ocupa o wrapper inteiro:
+
+```vue
+<script setup>
+import { EmbedConversation } from '@zapmizer/embed/vue'
+
+const frame = { configure: (iframe) => Object.assign(iframe.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', border: '0' }) }
+const clamp = (height) => `${Math.min(800, Math.max(320, height ?? 480))}px`
+</script>
+
+<template>
+  <div style="position: relative">
+    <EmbedConversation brand="parli" :open-session="openSession" :frame="frame" @message-sent="refreshTimeline">
+      <template #default="{ state, retry, height }">
+        <div :style="{ height: clamp(height) }" />
+        <ErroDaConversa v-if="state.status === 'error'" class="absolute inset-0" :state="state" @retry="retry" />
+      </template>
+    </EmbedConversation>
+  </div>
+</template>
+```
 
 ### Sem framework
 
@@ -214,6 +243,8 @@ async function logout() {
 
 - `endEmbeds` fecha toda caixa e conversa da marca nesta aba e apaga toda retomada `${brand}-inbox:*`. Também avisa as outras abas em `BroadcastChannel('${brand}-embed-logout')`.
 - O app que já tem canal próprio passa `broadcast: false` e chama `endEmbeds` no próprio handler.
+- Sem `storage`, `endEmbeds` e `listenToLogout` apagam a retomada só no `sessionStorage`. O app que passou outro `storage` para `createInbox`, `createInboxHost` ou `useInboxHost` (por exemplo `window.localStorage`) precisa passar o mesmo `storage` aos dois: `endEmbeds({ brand: 'parli', storage: window.localStorage })` e `listenToLogout({ brand: 'parli', storage: window.localStorage })`.
+- Um embed que falha ao fechar não impede os outros: todos fecham e a retomada é apagada.
 
 ## Desenvolvimento
 
