@@ -46,6 +46,7 @@
   "scripts": {
     "build": "rm -rf dist && bun build src/conversation.ts src/inbox.ts src/host.ts src/logout.ts src/errors.ts src/resume.ts src/state.ts src/vue.ts --root src --outdir dist --format esm --target browser --splitting --external vue --chunk-naming 'chunks/[name]-[hash].[ext]' && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck:examples": "tsc --noEmit -p tsconfig.examples.json",
     "test": "CLAUDECODE=1 bun test"
   },
   "peerDependencies": {
