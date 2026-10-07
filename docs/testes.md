@@ -31,7 +31,8 @@ GlobalRegistrator.register({
 
 - **Não desligue o carregamento do iframe** (`disableIframePageLoading`). Sem ele, `iframe.contentWindow` fica `null`, e a lib ignora toda mensagem do iframe sem avisar.
 - **Registre o DOM antes de importar o Vue.** O `runtime-dom` lê o `document` quando carrega. O preload garante a ordem.
-- O happy-dom troca `fetch`, `Response` e `AbortSignal` globais pelos dele. Um backend rodando no mesmo processo de teste precisa receber o `fetch` do runtime, guardado antes do registro.
+- O interceptor responde a **todo** `fetch` do happy-dom, inclusive o do `openSession` e do `keepAlive` do app. Num teste do front, troque o `fetch` global por um falso (como no exemplo); senão a sessão chega como `{}` e o estado vira `unavailable`, sem pista do motivo.
+- O happy-dom troca `fetch`, `Response` e `AbortSignal` globais pelos dele. Um backend Bun ou Node no mesmo processo quebra sem avisar: o `Bun.serve` recusa a `Response` do happy-dom, e o `fetch` do runtime recusa o `AbortSignal.timeout` dele. O exemplo em Node pega esse erro como falha de rede e devolve `503 unavailable`. Teste o backend sem o preload (outro `bun test`, com outro `bunfig`), ou guarde os três globais antes do registro e passe-os ao backend.
 - O happy-dom imprime avisos sobre o flag `allow-storage-access-by-user-activation` do `sandbox`; são inofensivos.
 
 O exemplo [`examples/vanilla/conversation.test.ts`](../examples/vanilla/conversation.test.ts) roda com esse preload.

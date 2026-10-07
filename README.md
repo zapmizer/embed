@@ -4,7 +4,7 @@ Abre a conversa e a caixa de entrada do Zapmizer num iframe e segue o protocolo 
 
 ## Instalação
 
-O `dist/` vem commitado, porque instalar pelo GitHub não roda o build. Fixe a versão pela tag:
+O `dist/` vem commitado, porque instalar pelo GitHub não roda o build. O pacote instalado traz só o `dist/`; a doc fica no GitHub, em `docs/` da tag que você fixou. Fixe a versão pela tag:
 
 ```bash
 bun add github:zapmizer/embed#v0.1.0

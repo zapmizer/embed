@@ -33,7 +33,7 @@ As mesmas de [`createInbox`](caixa-de-entrada.md#opções), sem `container` e `p
 | --- | --- |
 | `element` | A `div` fixa. Contém o container do iframe e o `overlay`. |
 | `overlay` | Uma `div` depois do iframe, para o app desenhar carregando e erro por cima dele. |
-| `state` | O `EmbedState` atual. Antes do primeiro `attach`, `closed`. |
+| `state` | O `EmbedState` atual. Antes do primeiro `attach`, `closed`; o `onState` não é chamado na criação. |
 | `person` | A pessoa da caixa atual. |
 
 A lib não estiliza o iframe nem o `overlay`. Os dois precisam de `position: absolute; inset: 0`: no iframe, pelo `frame.configure`; no `overlay`, direto no elemento. `role`, `aria-label` e `z-index` também ficam com o app.
@@ -79,3 +79,5 @@ const keepAlive: KeepAlive = async () => {
   }
 }
 ```
+
+O aviso vale para o keepalive. Um `401/419` do `openSession` não fecha nada: vira o erro `app_session_expired`, com o botão de recarregar. Depois de um novo login sem recarregar a página, zere a marca.

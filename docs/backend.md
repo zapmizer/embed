@@ -19,7 +19,7 @@ Este é o ponto que mais confunde. A lib não fala com a API: ela lê a resposta
 | `parent_origin` | origem da página que mostra o iframe | idem |
 | `user` | `{ id, name }` de quem atende | idem |
 | `phone` | não vai | telefone do cliente |
-| `appearance` | não vai | `{ theme: 'light' \| 'dark', color_primary?, radius?, font_family? }`. A Resolaris valida `color_primary` como `#rrggbb`, `radius` de 0 a 24 e `font_family` com até 60 caracteres entre letras, números, espaço e hífen. |
+| `appearance` | não vai | `{ theme: 'light' \| 'dark', color_primary?, radius?, font_family? }` |
 
 Sucesso é `201` com `{ url, expires_at, resume_url?, resume_until? }`. Recusa vem com o motivo em `error`.
 
@@ -59,7 +59,7 @@ Fora `401`, `419` e `429`, o status não muda nada. O que importa é o `code`.
 
 **2. `origin` vai junto.** A API não manda `origin`. O backend calcula a partir da `url`.
 
-**3. O `401` da API não pode chegar como `401`** (nem como `419`). No backend do app, `401` e `419` querem dizer "a sessão do próprio app caiu", e a lib pede para recarregar a página (`reload`). O `401` da API quer dizer outra coisa: a chave da integração foi revogada e a conexão precisa ser refeita. Repassado como `401` ou `419`, o usuário recarregaria a página em loop. Transforme em outro status (por exemplo `422`) com `code: "reauth_required"`, que dá a ação `reconnect`.
+**3. O `401` da API não pode chegar como `401`.** No backend do app, `401` e `419` querem dizer "a sessão do próprio app caiu", e a lib pede para recarregar a página (`reload`). O `401` da API quer dizer outra coisa: a chave da integração foi revogada e a conexão precisa ser refeita. Repassado como `401` ou `419`, o usuário recarregaria a página em loop. Transforme em outro status (por exemplo `422`) com `code: "reauth_required"`, que dá a ação `reconnect`. A API não usa `419`, que é do CSRF de sessão web; os exemplos tratam um `419` dela como o `401` só por segurança.
 
 Além disso, `5xx` ou falha de rede da API viram `503` com `code: "unavailable"` (ação `retry`).
 
@@ -69,6 +69,7 @@ Além disso, `5xx` ou falha de rede da API viram `503` com `code: "unavailable"`
 | `401` (ou `419`) | `422 { code: "reauth_required" }` | `reauth_required` / `reconnect` |
 | `429` + `Retry-After` | `429 { code: <error> }` + `Retry-After` | `rate_limited` / `retry`, com `retryAfter`. Em todo `429` a lib usa `rate_limited`, qualquer que seja o `code`. |
 | outro `4xx` com `error` | mesmo status, `{ code: <error> }` | o código, com a ação dele |
+| outro `4xx` sem `error` | mesmo status, `{ code: null }` | `unavailable` / `retry` |
 | `5xx`, rede, `201` sem `url` web | `503 { code: "unavailable" }` | `unavailable` / `retry` |
 | sessão do app vencida, CSRF | `401` ou `419` (o próprio framework) | `app_session_expired` / `reload` |
 
@@ -137,11 +138,11 @@ Para Node 18+, Bun, Deno ou qualquer servidor com `Request`/`Response` da Web. A
 
 ```ts
 export async function openEmbedSession(input: EmbedSessionInput): Promise<Response> {
-  const { token, parentOrigin, ...rest } = input
+  const { token, parentOrigin, api: base = 'https://app.zapmizer.com/api/', ...rest } = input
   let api: Response
 
   try {
-    api = await fetch(new URL('embed/sessions', 'https://app.zapmizer.com/api/'), {
+    api = await fetch(new URL('embed/sessions', base), {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ ...rest, parent_origin: parentOrigin }),
@@ -187,5 +188,5 @@ A caixa pinga o app a cada 15 minutos enquanto está pronta e visível, para a s
 - **`parent_origin` atrás de proxy.** `parent_origin` é a origem pública da página, como o navegador a vê. Atrás de um proxy ou balanceador, a origem lida da requisição pode sair com `http://` ou com o host interno (no Laravel, sem `TrustProxies`), e a API responde `origin_not_allowed`. Se o servidor não enxerga a origem pública, use uma configurada.
 - **CSRF.** O endpoint é uma rota web autenticada, então pede CSRF. O axios do Laravel manda o `X-XSRF-TOKEN` sozinho. Com `fetch`, mande o `X-CSRF-TOKEN` do `<meta name="csrf-token">`. Sem ele, o Laravel responde `419` e a lib pede para recarregar a página.
 - **Throttle.** Um limite como `throttle:30,1` protege a API. Com ele, a resposta `429` do próprio app também vira `rate_limited`.
-- **Validação da aparência.** Um `422` de validação do Laravel (`{ message, errors }`, sem `code`) vira `unavailable`. Mande `color_primary` como `#rrggbb`, não `rgb()`.
+- **Validação da aparência.** Um `422` de validação do Laravel (`{ message, errors }`, sem `code`) vira `unavailable`. Valide o que vem do front antes de chamar a API; o exemplo em Laravel mostra regras para cada campo.
 - **Rota sem integração.** Um `404` antes de chamar a API vira `unavailable`, com botão de tentar de novo. Se o app sabe o motivo, devolva um `code` que ele saiba desenhar.

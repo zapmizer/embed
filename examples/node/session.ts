@@ -8,16 +8,17 @@ export type EmbedSessionInput = {
   token: string // a chave da integração com o Zapmizer, guardada no servidor do app
   parentOrigin: string // a origem da página que mostra o iframe, por exemplo https://app.seuapp.com
   user: { id: string; name: string }
+  api?: string // a base da API, para apontar para staging ou para uma API falsa nos testes. Padrão: produção.
 } & ({ component: 'inbox' } | { component: 'conversation'; phone: string; appearance: Appearance })
 
 export type Appearance = { theme: 'light' | 'dark'; color_primary?: string; radius?: number; font_family?: string }
 
 export async function openEmbedSession(input: EmbedSessionInput): Promise<Response> {
-  const { token, parentOrigin, ...rest } = input
+  const { token, parentOrigin, api: base = API, ...rest } = input
   let api: Response
 
   try {
-    api = await fetch(new URL('embed/sessions', API), {
+    api = await fetch(new URL('embed/sessions', base), {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ ...rest, parent_origin: parentOrigin }),

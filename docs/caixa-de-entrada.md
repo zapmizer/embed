@@ -54,7 +54,7 @@ Abrir uma caixa do zero é pesado. Quando o backend devolve `resume_url` e `resu
 
 ## Keepalive
 
-Com a caixa pronta e visível, a lib chama `keepAlive` a cada `keepAliveMs`. Visível quer dizer `setVisible(true)` (no host, o slot preso): a lib não olha se a aba do navegador está em primeiro plano. Isso serve para a sessão do app não vencer com o atendente parado dentro do iframe.
+Com a caixa pronta e visível, a lib chama `keepAlive` a cada `keepAliveMs`. Visível quer dizer `setVisible(true)` (no host, o slot preso): a lib não olha se a aba do navegador está em primeiro plano. Isso serve para a sessão do app não vencer com o atendente parado dentro do iframe. O intervalo conta desde a criação da caixa, e os pings que caem com ela oculta ou ainda abrindo são pulados. Ao voltar a aparecer, a caixa não pinga na hora: o próximo ping vem no próximo intervalo.
 
 ```ts
 const keepAlive: KeepAlive = async () => {
@@ -66,7 +66,7 @@ const keepAlive: KeepAlive = async () => {
 }
 ```
 
-- Rejeitar com `{ status: 401 }` ou `{ status: 419 }` fecha a caixa (`closed`) e apaga toda retomada.
+- Rejeitar com `{ status: 401 }` ou `{ status: 419 }` fecha a caixa (`closed`) e apaga toda retomada. Só a caixa: uma conversa aberta continua.
 - Qualquer outra falha é ignorada. Erro do axios funciona direto.
 - Sem `keepAlive`, nada é pingado.
 
@@ -82,13 +82,13 @@ const keepAlive: KeepAlive = async () => {
 Com `setVisible(false)`, o iframe continua vivo, mas:
 
 - o keepalive para;
-- um `session_expired` não abre sessão nova na hora: a sessão nova é pedida quando a caixa volta a aparecer;
+- um `session_expired` não abre sessão nova na hora: o estado continua `ready`, e a sessão nova é pedida quando a caixa volta a aparecer;
 - uma falha ao abrir com a caixa oculta (recusa com ação `retry`, prazo do `ready` ou `session_expired` antes do `ready`) é tentada de novo sozinha quando ela volta a aparecer. `session_replaced` nunca é retomado sozinho.
 
 O host do SPA chama `setVisible` por você.
 
 ## `retry()` e `destroy()`
 
-`retry()` só tem efeito em `error`: tira o iframe e pede uma sessão nova. Em `session_replaced`, tenta antes a retomada (veja multi-aba).
+`retry()` só tem efeito em `error`: tira o iframe e pede uma sessão nova. Em `session_replaced`, se outra aba gravou uma entrada de retomada (só com `localStorage`), monta essa entrada em vez de pedir sessão; com `sessionStorage`, pede sessão nova (veja [multi-aba](logout-e-multiaba.md#a-caixa-em-várias-abas)).
 
 `destroy()` tira o iframe, para o keepalive e publica `closed`.

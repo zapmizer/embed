@@ -57,7 +57,7 @@ const frame = {
 
 ## Tema: `reopen()`
 
-A aparência é escolhida quando a sessão é criada. Para trocá-la (por exemplo, o tema), chame `reopen()`: a lib pede uma sessão nova e mantém o iframe velho montado (`opening` com `frame: 'stale'`) até a nova chegar. O `openSession` precisa ler o tema na hora da chamada, não na criação.
+A aparência é escolhida quando a sessão é criada. Para trocá-la (por exemplo, o tema), chame `reopen()`: a lib pede uma sessão nova e mantém o iframe velho montado (`opening` com `frame: 'stale'`) até a nova chegar. Aí o velho sai e entra um `<iframe>` novo, com outro `contentWindow`. O `openSession` precisa ler o tema na hora da chamada, não na criação.
 
 `reopen()` funciona em `opening`, `loading`, `ready` e em `error` com ação `retry`. Em erro com outra ação, não faz nada.
 
