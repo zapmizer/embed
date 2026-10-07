@@ -1,0 +1,60 @@
+// src/errors.ts
+var RETRY_CODES = new Set(["session_expired", "inbox_expired", "session_revoked", "session_replaced", "ready_timeout", "unavailable", "rate_limited"]);
+var RECONNECT_CODES = new Set(["reauth_required", "connection_without_number", "number_unavailable"]);
+var defaultMessages2 = {
+  session_expired: "A sessão expirou antes de abrir. Tente de novo.",
+  inbox_expired: "A caixa de entrada expirou. Tente de novo.",
+  session_revoked: "O acesso foi encerrado. Abra de novo; se não abrir, reconecte o WhatsApp.",
+  session_replaced: "A caixa de entrada foi aberta em outra aba deste navegador.",
+  subscription_required: "A assinatura está inativa. Assine para atender por aqui.",
+  ready_timeout: "Demorou demais para abrir. Tente de novo.",
+  unavailable: "Não foi possível abrir agora. Tente de novo.",
+  rate_limited: "Muitas aberturas seguidas. Aguarde um minuto e tente de novo.",
+  app_session_expired: "Sua sessão expirou. Recarregue a página.",
+  reauth_required: "A conexão com o WhatsApp precisa ser refeita.",
+  connection_without_number: "Nenhum número de WhatsApp está conectado.",
+  number_unavailable: "O número conectado está sem conexão.",
+  approver_without_access: "Quem aprovou a conexão perdeu o acesso a este número. Peça ao dono da conta para reconectar o WhatsApp.",
+  official_number_unsupported: "Ainda não funciona com número oficial do WhatsApp.",
+  origin_not_allowed: "Este endereço ainda não foi liberado. Avise o suporte.",
+  rejected: "A abertura foi recusada. Avise o suporte.",
+  customer_without_phone: "Cadastre um telefone para ver a conversa."
+};
+function actionFor2(code) {
+  if (RETRY_CODES.has(code)) {
+    return "retry";
+  }
+  if (RECONNECT_CODES.has(code)) {
+    return "reconnect";
+  }
+  if (code === "subscription_required") {
+    return "checkout";
+  }
+  if (code === "app_session_expired") {
+    return "reload";
+  }
+  return null;
+}
+function codeForRefusal2(refusal) {
+  if (refusal.status === 401 || refusal.status === 419) {
+    return "app_session_expired";
+  }
+  if (refusal.status === 429) {
+    return "rate_limited";
+  }
+  if (refusal.code !== null && refusal.code !== "") {
+    return refusal.code;
+  }
+  return "unavailable";
+}
+function toRefusal2(error) {
+  if (typeof error !== "object" || error === null) {
+    return { status: null, code: null };
+  }
+  const status = "status" in error && typeof error.status === "number" ? error.status : null;
+  const code = "code" in error && typeof error.code === "string" ? error.code : null;
+  const retryAfter = "retryAfter" in error && typeof error.retryAfter === "number" && Number.isFinite(error.retryAfter) ? error.retryAfter : null;
+  return retryAfter === null ? { status, code } : { status, code, retryAfter };
+}
+
+export { defaultMessages2, actionFor2, codeForRefusal2, toRefusal2 };
