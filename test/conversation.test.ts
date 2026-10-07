@@ -6,6 +6,7 @@ import type { EmbedState } from '../src/state'
 import { fakeClock } from './support/clock'
 import type { FakeClock } from './support/clock'
 import { BRAND, PARLI, appendFrame, framesIn, onlyFrame, postFrom } from './support/frames'
+import { captureMicrotaskErrors } from './support/microtasks'
 import { scriptedSessions, session, settle } from './support/sessions'
 import type { ScriptedSessions } from './support/sessions'
 
@@ -401,5 +402,99 @@ describe('embedded conversation', () => {
     postFrom(iframe, { type: 'ready' })
 
     expect(states.map((state) => state.status)).toEqual(['opening', 'loading', 'ready'])
+  })
+
+  it('does not let an onState that throws on the first state escape createConversation', async () => {
+    const microtasks = captureMicrotaskErrors()
+    const failure = new Error('app failed')
+
+    try {
+      expect(() => {
+        conversation = createConversation({
+          container,
+          brand: BRAND,
+          openSession: sessions.openSession,
+          clock,
+          onState: () => {
+            throw failure
+          },
+        })
+      }).not.toThrow()
+      expect(conversation.state.status).toBe('opening')
+      expect(sessions.calls()).toBe(1)
+      conversation.destroy()
+      await settle()
+    } finally {
+      microtasks.restore()
+    }
+
+    expect(microtasks.thrown()).toEqual([failure, failure])
+  })
+
+  it('keeps working when onResize and onMessageSent throw', async () => {
+    const microtasks = captureMicrotaskErrors()
+    const resizeFailure = new Error('resize failed')
+    const sentFailure = new Error('sent failed')
+
+    conversation = createConversation({
+      container,
+      brand: BRAND,
+      openSession: sessions.openSession,
+      clock,
+      onState: (state) => states.push(state),
+      onResize: () => {
+        throw resizeFailure
+      },
+      onMessageSent: () => {
+        throw sentFailure
+      },
+    })
+    sessions.resolve(0, session('a'))
+    await settle()
+    const iframe = onlyFrame(container)
+
+    try {
+      postFrom(iframe, { type: 'ready' })
+      postFrom(iframe, { type: 'resize', height: 640 })
+      postFrom(iframe, { type: 'message_sent', message_id: 'm1' })
+      postFrom(iframe, { type: 'resize', height: 480 })
+      await settle()
+    } finally {
+      microtasks.restore()
+    }
+
+    expect(conversation.state).toEqual({ status: 'ready', frame: 'live' })
+    expect(microtasks.thrown()).toEqual([resizeFailure, sentFailure, resizeFailure])
+  })
+
+  it('releases the iframe and the deadline when onState throws on closed', async () => {
+    const microtasks = captureMicrotaskErrors()
+    const failure = new Error('app failed')
+
+    conversation = createConversation({
+      container,
+      brand: BRAND,
+      openSession: sessions.openSession,
+      clock,
+      onState: (state) => {
+        if (state.status === 'closed') {
+          throw failure
+        }
+      },
+    })
+    sessions.resolve(0, session('a'))
+    await settle()
+
+    try {
+      expect(() => conversation.destroy()).not.toThrow()
+      await settle()
+    } finally {
+      microtasks.restore()
+    }
+
+    expect(conversation.state).toEqual({ status: 'closed', frame: 'none' })
+    expect(framesIn(container)).toEqual([])
+    expect(clock.pending()).toBe(0)
+    expect(microtasks.thrown()).toEqual([failure])
   })
 })

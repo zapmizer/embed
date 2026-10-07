@@ -1,4 +1,4 @@
-import { INBOX_FRAME, createFrameSlot, defaultClock, requestSession, serialDispatcher } from './driver'
+import { INBOX_FRAME, createFrameSlot, defaultClock, isolated, requestSession, serialDispatcher } from './driver'
 import { toRefusal } from './errors'
 import { initialState, transition } from './machine/inbox'
 import type { InboxEffect, InboxEvent, InboxMachine } from './machine/inbox'
@@ -121,7 +121,9 @@ export function createInbox(options: InboxOptions): Inbox {
         pingAppSession(keepAlive)
       }
     } else {
-      options.onState(exposed(machine.view))
+      const state = exposed(machine.view)
+
+      isolated(() => options.onState(state))
     }
   }
 

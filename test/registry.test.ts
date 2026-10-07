@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { endRegisteredEmbeds, registerEmbed } from '../src/registry'
+import { captureMicrotaskErrors } from './support/microtasks'
+import { settle } from './support/sessions'
 
 describe('live embeds of this tab', () => {
   it('ends every embed of the brand', () => {
@@ -46,5 +48,27 @@ describe('live embeds of this tab', () => {
     stopSecond()
 
     expect(ended).toEqual(['first', 'second'])
+  })
+
+  it('keeps ending the other embeds when one throws, and rethrows it later', async () => {
+    const microtasks = captureMicrotaskErrors()
+    const ended: string[] = []
+    const failure = new Error('end failed')
+    const stopFirst = registerEmbed('registry-f', () => {
+      throw failure
+    })
+    const stopSecond = registerEmbed('registry-f', () => ended.push('second'))
+
+    try {
+      expect(() => endRegisteredEmbeds('registry-f')).not.toThrow()
+      await settle()
+    } finally {
+      microtasks.restore()
+      stopFirst()
+      stopSecond()
+    }
+
+    expect(ended).toEqual(['second'])
+    expect(microtasks.thrown()).toEqual([failure])
   })
 })

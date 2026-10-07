@@ -7,6 +7,7 @@ import type { FakeClock } from './support/clock'
 import { BRAND, PARLI, appendFrame, framesIn, onlyFrame, postFrom } from './support/frames'
 import { RESUME_URL, START_URL, scriptedSessions, session, settle } from './support/sessions'
 import type { ScriptedSessions } from './support/sessions'
+import { captureMicrotaskErrors } from './support/microtasks'
 import { memoryStorage } from './support/storage'
 
 const KEY = 'parli-inbox:7:3'
@@ -562,5 +563,59 @@ describe('embedded inbox', () => {
 
     expect(sessions.calls()).toBe(1)
     expect(states.filter((state) => state.status === 'closed')).toHaveLength(1)
+  })
+
+  it('does not let an onState that throws on the first state escape createInbox', async () => {
+    const microtasks = captureMicrotaskErrors()
+    const failure = new Error('app failed')
+
+    try {
+      expect(() =>
+        open({
+          onState: () => {
+            throw failure
+          },
+        }),
+      ).not.toThrow()
+      expect(inbox.state.status).toBe('opening')
+      expect(sessions.calls()).toBe(1)
+      inbox.destroy()
+      await settle()
+    } finally {
+      microtasks.restore()
+    }
+
+    expect(microtasks.thrown()).toEqual([failure, failure])
+  })
+
+  it('releases the iframe, the listener and the keepalive when onState throws on closed', async () => {
+    const microtasks = captureMicrotaskErrors()
+    const failure = new Error('app failed')
+    const iframe = await openLoaded(true, {
+      onState: (state) => {
+        states.push(state)
+
+        if (state.status === 'closed') {
+          throw failure
+        }
+      },
+    })
+
+    postFrom(iframe, { type: 'ready' })
+
+    try {
+      expect(() => inbox.destroy()).not.toThrow()
+      await settle()
+    } finally {
+      microtasks.restore()
+    }
+
+    postFrom(iframe, { type: 'session_expired' })
+
+    expect(inbox.state).toEqual({ status: 'closed', frame: 'none' })
+    expect(framesIn(container)).toEqual([])
+    expect(clock.pending()).toBe(0)
+    expect(sessions.calls()).toBe(1)
+    expect(microtasks.thrown()).toEqual([failure])
   })
 })

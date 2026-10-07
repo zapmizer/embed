@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { createConversation } from '../src/conversation'
 import { createInboxHost } from '../src/host'
+import { createInbox } from '../src/inbox'
+import { endEmbeds } from '../src/logout'
 import type { InboxHost } from '../src/host'
 import { endRegisteredEmbeds } from '../src/registry'
 import type { EmbedState } from '../src/state'
@@ -8,6 +11,7 @@ import type { FakeClock } from './support/clock'
 import { BRAND, PARLI, framesIn, onlyFrame, postFrom } from './support/frames'
 import { fakeResizeObserver, placedSlot } from './support/layout'
 import type { FakeResizeObservers, PlacedSlot } from './support/layout'
+import { captureMicrotaskErrors } from './support/microtasks'
 import { RESUME_URL, scriptedSessions, session, settle } from './support/sessions'
 import type { ScriptedSessions } from './support/sessions'
 
@@ -369,5 +373,42 @@ describe('inbox host for SPAs', () => {
     host.attach(slot.element, '7:3')
 
     expect(sessions.calls()).toBe(0)
+  })
+
+  it('ends every embed of the brand and opens a fresh inbox later when the app onState throws on closed', async () => {
+    const microtasks = captureMicrotaskErrors()
+    const failure = new Error('app failed')
+    const throwOnClosed = (state: EmbedState): void => {
+      if (state.status === 'closed') {
+        throw failure
+      }
+    }
+
+    host.destroy()
+    host = createInboxHost({ brand: BRAND, openSession: sessions.openSession, keepAlive: () => Promise.resolve(), clock, onState: throwOnClosed })
+    await visitLoaded()
+    const conversation = createConversation({ container: document.body.appendChild(document.createElement('div')), brand: BRAND, openSession: scriptedSessions().openSession, clock, onState: throwOnClosed })
+    const inbox = createInbox({ container: document.body.appendChild(document.createElement('div')), brand: BRAND, person: '8:4', openSession: scriptedSessions().openSession, keepAlive: () => Promise.resolve(), clock, onState: throwOnClosed })
+
+    try {
+      expect(() => endEmbeds({ brand: BRAND, broadcast: false })).not.toThrow()
+      await settle()
+
+      expect([host.state.status, conversation.state.status, inbox.state.status]).toEqual(['closed', 'closed', 'closed'])
+      expect(isHidden()).toBe(true)
+      expect(framesIn(host.element)).toEqual([])
+      expect(window.sessionStorage.getItem('parli-inbox:7:3')).toBeNull()
+      expect(clock.pending()).toBe(0)
+      expect(microtasks.thrown()).toEqual([failure, failure, failure])
+
+      host.attach(slot.element, '7:3')
+
+      expect(sessions.calls()).toBe(2)
+      expect(isHidden()).toBe(false)
+      host.destroy()
+      await settle()
+    } finally {
+      microtasks.restore()
+    }
   })
 })

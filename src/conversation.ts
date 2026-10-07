@@ -1,4 +1,4 @@
-import { CONVERSATION_FRAME, createFrameSlot, defaultClock, requestSession, serialDispatcher } from './driver'
+import { CONVERSATION_FRAME, createFrameSlot, defaultClock, isolated, requestSession, serialDispatcher } from './driver'
 import { initialState, transition } from './machine/conversation'
 import type { ConversationEffect, ConversationEvent, ConversationMachine } from './machine/conversation'
 import { exposed } from './machine/view'
@@ -73,11 +73,17 @@ export function createConversation(options: ConversationOptions): Conversation {
     } else if (effect.type === 'clear_ready_timeout') {
       clearReadyTimeout()
     } else if (effect.type === 'emit_resize') {
-      options.onResize?.(effect.height)
+      const height = effect.height
+
+      isolated(() => options.onResize?.(height))
     } else if (effect.type === 'emit_message_sent') {
-      options.onMessageSent?.(effect.message_id)
+      const messageId = effect.message_id
+
+      isolated(() => options.onMessageSent?.(messageId))
     } else {
-      options.onState(exposed(machine.view))
+      const state = exposed(machine.view)
+
+      isolated(() => options.onState(state))
     }
   }
 

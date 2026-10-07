@@ -1,4 +1,4 @@
-import { defaultClock } from './driver'
+import { defaultClock, isolated } from './driver'
 import { createInbox } from './inbox'
 import type { Inbox } from './inbox'
 import type { ResumeStorage } from './resume'
@@ -27,7 +27,7 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
 
   function publish(next: EmbedState): void {
     state = next
-    options.onState(next)
+    isolated(() => options.onState(next))
   }
 
   function hide(): void {
@@ -128,6 +128,11 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
 
   function attach(nextSlot: HTMLElement, nextPerson: string | null): void {
     cancelIdleTimer()
+
+    if (inbox !== null && inbox.state.status === 'closed') {
+      generation += 1
+      inbox = null
+    }
 
     if (inbox !== null && nextPerson !== person) {
       const previous = inbox

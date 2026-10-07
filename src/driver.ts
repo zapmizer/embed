@@ -24,6 +24,16 @@ export const defaultClock: Clock = {
   },
 }
 
+export function isolated(callback: () => void): void {
+  try {
+    callback()
+  } catch (error) {
+    queueMicrotask(() => {
+      throw error
+    })
+  }
+}
+
 export function serialDispatcher<E>(handle: (event: E) => void): (event: E) => void {
   const queue: E[] = []
   let running = false

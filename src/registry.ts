@@ -1,3 +1,5 @@
+import { isolated } from './driver'
+
 const live = new Map<string, Set<() => void>>()
 
 export function registerEmbed(brand: string, end: () => void): () => void {
@@ -19,6 +21,6 @@ export function endRegisteredEmbeds(brand: string): void {
   }
 
   for (const end of [...ends]) {
-    end()
+    isolated(end)
   }
 }
