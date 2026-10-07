@@ -3,6 +3,7 @@ import type { Clock, FrameOptions, OpenSession, SessionOpened, SessionRefused } 
 export declare const CONVERSATION_FRAME: FrameKind;
 export declare const INBOX_FRAME: FrameKind;
 export declare const defaultClock: Clock;
+export declare function isolated(callback: () => void): void;
 export declare function serialDispatcher<E>(handle: (event: E) => void): (event: E) => void;
 export declare function isUsableSession(session: unknown): session is SessionOpened;
 export declare function requestSession(openSession: OpenSession, onOpened: (session: SessionOpened) => void, onRefused: (refusal: SessionRefused) => void): void;

@@ -1,19 +1,20 @@
 import {
   codeForRefusal2
-} from "./conversation-k9ba15ty.js";
+} from "./conversation-8vvt7dm7.js";
 import {
-  CONVERSATION_FRAME,
-  defaultClock,
-  serialDispatcher,
-  requestSession,
-  createFrameSlot,
   failed,
   exposed,
   canAutoReopen
-} from "./conversation-b0rwqgkr.js";
+} from "./conversation-zyx12f77.js";
 import {
+  CONVERSATION_FRAME,
+  defaultClock,
+  isolated,
+  serialDispatcher,
+  requestSession,
+  createFrameSlot,
   registerEmbed
-} from "./conversation-j87npja7.js";
+} from "./conversation-zmxh8xgq.js";
 
 // src/machine/conversation.ts
 function initialState() {
@@ -192,11 +193,14 @@ function createConversation2(options) {
     } else if (effect.type === "clear_ready_timeout") {
       clearReadyTimeout();
     } else if (effect.type === "emit_resize") {
-      options.onResize?.(effect.height);
+      const height = effect.height;
+      isolated(() => options.onResize?.(height));
     } else if (effect.type === "emit_message_sent") {
-      options.onMessageSent?.(effect.message_id);
+      const messageId = effect.message_id;
+      isolated(() => options.onMessageSent?.(messageId));
     } else {
-      options.onState(exposed(machine.view));
+      const state = exposed(machine.view);
+      isolated(() => options.onState(state));
     }
   }
   dispatch({ type: "start" });

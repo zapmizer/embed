@@ -1,13 +1,14 @@
-import"./chunks/conversation-k9ba15ty.js";
+import"./chunks/conversation-8vvt7dm7.js";
 import"./chunks/conversation-6md6txsp.js";
 import {
   createConversation2
-} from "./chunks/conversation-pj4k3fb2.js";
-import"./chunks/conversation-bjypth2h.js";
+} from "./chunks/conversation-2pbqf8y2.js";
+import"./chunks/conversation-fwv8fg91.js";
 import {
   createInboxHost2
-} from "./chunks/conversation-yx2gn52p.js";
-import"./chunks/conversation-b0rwqgkr.js";
+} from "./chunks/conversation-gc5c7ppn.js";
+import"./chunks/conversation-zyx12f77.js";
+import"./chunks/conversation-zmxh8xgq.js";
 
 // src/vue.ts
 import { defineComponent, getCurrentScope, h, onBeforeUnmount, onMounted, onScopeDispose, ref, shallowRef, toValue, watch } from "vue";
@@ -56,14 +57,22 @@ var EmbedConversation = defineComponent({
   }
 });
 function useInboxHost(options) {
+  const { person, enabled, onState, ...hostOptions } = options;
   const state = shallowRef({ status: "closed", frame: "none" });
   const host = createInboxHost2({
-    ...options,
+    ...hostOptions,
     onState: (next) => {
       state.value = next;
-      options.onState?.(next);
+      onState?.(next);
     }
   });
+  if (person !== undefined || enabled !== undefined) {
+    watch([() => toValue(person), () => toValue(enabled ?? true)], ([nextPerson, isEnabled]) => {
+      if (!isEnabled || person !== undefined && nextPerson !== host.person) {
+        host.close();
+      }
+    });
+  }
   if (getCurrentScope() !== undefined) {
     onScopeDispose(() => host.destroy());
   }

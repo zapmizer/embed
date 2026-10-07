@@ -1,7 +1,6 @@
 import {
-  actionFor2,
   toRefusal2
-} from "./conversation-k9ba15ty.js";
+} from "./conversation-8vvt7dm7.js";
 import {
   webOriginOf2
 } from "./conversation-6md6txsp.js";
@@ -56,6 +55,15 @@ var defaultClock = {
     return () => clearInterval(handle);
   }
 };
+function isolated(callback) {
+  try {
+    callback();
+  } catch (error) {
+    queueMicrotask(() => {
+      throw error;
+    });
+  }
+}
 function serialDispatcher(handle) {
   const queue = [];
   let running = false;
@@ -127,17 +135,24 @@ function createFrameSlot(options) {
   return { mount, unmount, stop };
 }
 
-// src/machine/view.ts
-var AUTO_REOPEN_GAP_MS = 60000;
-function failed(code, frame, retryAfter) {
-  const action = actionFor2(code);
-  return retryAfter === undefined ? { status: "error", frame, code, action } : { status: "error", frame, code, action, retryAfter };
+// src/registry.ts
+var live = new Map;
+function registerEmbed(brand, end) {
+  const ends = live.get(brand) ?? new Set;
+  ends.add(end);
+  live.set(brand, ends);
+  return () => {
+    ends.delete(end);
+  };
 }
-function exposed(view) {
-  return view.status === "idle" ? { status: "opening", frame: "none" } : view;
-}
-function canAutoReopen(lastAutoReopenAt, now) {
-  return lastAutoReopenAt === null || now - lastAutoReopenAt >= AUTO_REOPEN_GAP_MS;
+function endRegisteredEmbeds(brand) {
+  const ends = live.get(brand);
+  if (ends === undefined) {
+    return;
+  }
+  for (const end of [...ends]) {
+    isolated(end);
+  }
 }
 
-export { CONVERSATION_FRAME, INBOX_FRAME, defaultClock, serialDispatcher, requestSession, createFrameSlot, failed, exposed, canAutoReopen };
+export { CONVERSATION_FRAME, INBOX_FRAME, defaultClock, isolated, serialDispatcher, requestSession, createFrameSlot, registerEmbed, endRegisteredEmbeds };

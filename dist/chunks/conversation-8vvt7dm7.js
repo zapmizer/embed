@@ -51,10 +51,22 @@ function toRefusal2(error) {
   if (typeof error !== "object" || error === null) {
     return { status: null, code: null };
   }
+  if ("response" in error && typeof error.response === "object" && error.response !== null) {
+    return fromResponse(error.response);
+  }
+  if ("isAxiosError" in error && error.isAxiosError === true || "request" in error) {
+    return { status: null, code: null };
+  }
   const status = "status" in error && typeof error.status === "number" ? error.status : null;
   const code = "code" in error && typeof error.code === "string" ? error.code : null;
   const retryAfter = "retryAfter" in error && typeof error.retryAfter === "number" && Number.isFinite(error.retryAfter) ? error.retryAfter : null;
   return retryAfter === null ? { status, code } : { status, code, retryAfter };
+}
+function fromResponse(response) {
+  const status = "status" in response && typeof response.status === "number" && Number.isFinite(response.status) ? response.status : null;
+  const data = "data" in response && typeof response.data === "object" && response.data !== null ? response.data : null;
+  const code = data !== null && "code" in data && typeof data.code === "string" ? data.code : null;
+  return { status, code };
 }
 
 export { defaultMessages2, actionFor2, codeForRefusal2, toRefusal2 };

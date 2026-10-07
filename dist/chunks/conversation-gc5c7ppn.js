@@ -1,9 +1,10 @@
 import {
   createInbox2
-} from "./conversation-bjypth2h.js";
+} from "./conversation-fwv8fg91.js";
 import {
-  defaultClock
-} from "./conversation-b0rwqgkr.js";
+  defaultClock,
+  isolated
+} from "./conversation-zmxh8xgq.js";
 
 // src/host.ts
 function createInboxHost2(options) {
@@ -18,6 +19,7 @@ function createInboxHost2(options) {
   let observer = null;
   let cancelIdle = null;
   let generation = 0;
+  let destroyed = false;
   let state = { status: "closed", frame: "none" };
   element.append(frameContainer, overlay);
   element.style.position = "fixed";
@@ -27,7 +29,7 @@ function createInboxHost2(options) {
   window.addEventListener("scroll", measure, true);
   function publish(next) {
     state = next;
-    options.onState(next);
+    isolated(() => options.onState(next));
   }
   function hide() {
     element.style.visibility = "hidden";
@@ -104,11 +106,22 @@ function createInboxHost2(options) {
         }
       }
     });
+    if (mine !== generation) {
+      created.destroy();
+      return null;
+    }
     inbox = created;
     return created;
   }
   function attach(nextSlot, nextPerson) {
+    if (destroyed) {
+      return;
+    }
     cancelIdleTimer();
+    if (inbox !== null && inbox.state.status === "closed") {
+      generation += 1;
+      inbox = null;
+    }
     if (inbox !== null && nextPerson !== person) {
       const previous = inbox;
       generation += 1;
@@ -116,12 +129,15 @@ function createInboxHost2(options) {
       previous.destroy();
     }
     const current = inbox ?? open(nextPerson);
+    if (current === null) {
+      return;
+    }
     follow(nextSlot);
     show();
     current.setVisible(true);
   }
   function detach(oldSlot) {
-    if (oldSlot !== slot) {
+    if (destroyed || oldSlot !== slot) {
       return;
     }
     releaseSlot();
@@ -131,6 +147,9 @@ function createInboxHost2(options) {
     cancelIdle = clock.after(idleMs, close);
   }
   function close() {
+    if (destroyed) {
+      return;
+    }
     const current = inbox;
     teardown();
     current?.destroy();
@@ -140,6 +159,7 @@ function createInboxHost2(options) {
   }
   function destroy() {
     close();
+    destroyed = true;
     window.removeEventListener("resize", measure);
     window.removeEventListener("scroll", measure, true);
     element.remove();
@@ -150,9 +170,16 @@ function createInboxHost2(options) {
     get state() {
       return state;
     },
+    get person() {
+      return person;
+    },
     attach,
     detach,
-    retry: () => inbox?.retry(),
+    retry: () => {
+      if (!destroyed) {
+        inbox?.retry();
+      }
+    },
     close,
     destroy
   };

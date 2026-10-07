@@ -49,6 +49,8 @@ export declare function useInboxHost(options: UseInboxHostOptions): UseInboxHost
 export declare function useInboxSlot(host: InboxHost, options: UseInboxSlotOptions): Ref<HTMLElement | null>;
 export type UseInboxHostOptions = Omit<InboxHostOptions, 'onState'> & {
     onState?: (state: EmbedState) => void;
+    person?: MaybeRefOrGetter<string | null>;
+    enabled?: MaybeRefOrGetter<boolean>;
 };
 export type UseInboxHost = {
     host: InboxHost;

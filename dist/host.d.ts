@@ -17,6 +17,7 @@ export type InboxHost = {
     readonly element: HTMLDivElement;
     readonly overlay: HTMLDivElement;
     readonly state: EmbedState;
+    readonly person: string | null;
     attach(slot: HTMLElement, person: string | null): void;
     detach(slot: HTMLElement): void;
     retry(): void;

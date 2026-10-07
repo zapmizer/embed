@@ -2,7 +2,7 @@ import {
   actionFor2,
   codeForRefusal2,
   toRefusal2
-} from "./conversation-k9ba15ty.js";
+} from "./conversation-8vvt7dm7.js";
 import {
   resumeKey2,
   defaultResumeStorage2,
@@ -13,18 +13,19 @@ import {
   forgetAllResumes2
 } from "./conversation-6md6txsp.js";
 import {
-  INBOX_FRAME,
-  defaultClock,
-  serialDispatcher,
-  requestSession,
-  createFrameSlot,
   failed,
   exposed,
   canAutoReopen
-} from "./conversation-b0rwqgkr.js";
+} from "./conversation-zyx12f77.js";
 import {
+  INBOX_FRAME,
+  defaultClock,
+  isolated,
+  serialDispatcher,
+  requestSession,
+  createFrameSlot,
   registerEmbed
-} from "./conversation-j87npja7.js";
+} from "./conversation-zmxh8xgq.js";
 
 // src/machine/inbox.ts
 var RESUME_EFFECTS = new Set(["read_resume", "remember_resume", "forget_resume_if", "forget_other_resumes", "forget_all_resumes"]);
@@ -371,7 +372,8 @@ function createInbox2(options) {
         pingAppSession(keepAlive);
       }
     } else {
-      options.onState(exposed(machine.view));
+      const state = exposed(machine.view);
+      isolated(() => options.onState(state));
     }
   }
   dispatch({ type: "start" });
