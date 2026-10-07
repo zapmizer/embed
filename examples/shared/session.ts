@@ -1,14 +1,17 @@
 import type { KeepAlive, OpenSession } from '@zapmizer/embed/state'
 
 // Laravel aceita o token do <meta name="csrf-token"> no X-CSRF-TOKEN. Sem ele, o POST dá 419 e a lib pede para recarregar.
-const csrf = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? ''
+// Lido a cada chamada, porque um login sem recarregar a página troca o token.
+export function csrfToken(): string {
+  return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? ''
+}
 
 // `payload` é lido a cada abertura, então um `reopen()` depois da troca de tema já manda o tema novo.
 export function sessionFrom(path: string, payload: () => object = () => ({})): OpenSession {
   return async () => {
     const response = await fetch(path, {
       method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
       body: JSON.stringify(payload()),
     })
     const body = await response.json().catch(() => ({}))

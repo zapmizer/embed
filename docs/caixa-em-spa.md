@@ -53,7 +53,7 @@ Com `pointer-events: none` no `overlay`, ligue `pointer-events` no conteúdo que
 - `attach(slot, person)` mostra o host sobre o slot e marca a caixa como visível. Se a caixa já existe para a mesma pessoa, ela volta pronta, sem sessão nova.
 - `attach` com outra `person` descarta a caixa anterior e abre uma para a pessoa nova.
 - `detach(slot)` esconde o host (`visibility: hidden`, `pointer-events: none`, `inert`, `aria-hidden`) com o iframe vivo, e marca a caixa como oculta (veja [`setVisible`](caixa-de-entrada.md#setvisible)). Um `detach` de um slot que não é o atual é ignorado.
-- Depois de `idleMs` oculta, a caixa é descartada. A retomada fica guardada, então a próxima visita volta sem sessão nova enquanto ela valer.
+- Depois de `idleMs` oculta, a caixa é descartada e o host publica `closed`. A retomada fica guardada, então a próxima visita volta sem sessão nova enquanto ela valer.
 
 ## Seguindo o slot
 
@@ -65,4 +65,17 @@ O host segue o slot por `ResizeObserver` e pelos eventos `resize` e `scroll` da 
 - Um keepalive `401/419` ou o [logout](logout-e-multiaba.md) também fecham o host, e esses apagam a retomada.
 - `destroy()` fecha, tira o `element` do `body` e para de ouvir a janela. Chamadas depois dele são ignoradas.
 
-Com o host `closed`, o `overlay` some junto. Para avisar que a sessão caiu, desenhe na própria página, lendo `host.state` ou o `onState`.
+Com o host `closed`, o `overlay` some junto. O estado `closed` é o mesmo para todo motivo (logout, keepalive `401/419`, 30 min oculto, `close()`). Para avisar que a sessão do app caiu, guarde essa informação no `keepAlive` e desenhe o aviso na própria página:
+
+```ts
+let appSessionLost = false
+
+const keepAlive: KeepAlive = async () => {
+  const response = await fetch('/atendimento/keepalive')
+
+  if (!response.ok) {
+    appSessionLost = response.status === 401 || response.status === 419
+    throw { status: response.status }
+  }
+}
+```

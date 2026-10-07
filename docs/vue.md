@@ -45,8 +45,8 @@ const slot = useInboxSlot(inbox.host, { person, enabled })
 <template>
   <section ref="slot" class="h-full" />
   <Teleport :to="inbox.host.overlay">
-    <Carregando v-if="inbox.state.value.status === 'opening' || inbox.state.value.status === 'loading'" />
-    <ErroDaCaixa v-else-if="inbox.state.value.status === 'error'" :state="inbox.state.value" @retry="inbox.retry" />
+    <Carregando v-if="inbox.state.value.status === 'opening' || inbox.state.value.status === 'loading'" style="pointer-events: auto" />
+    <ErroDaCaixa v-else-if="inbox.state.value.status === 'error'" :state="inbox.state.value" style="pointer-events: auto" @retry="inbox.retry" />
   </Teleport>
 </template>
 ```
@@ -70,7 +70,7 @@ Passe o mesmo `person` e `enabled` para os dois.
 ### O que desenhar
 
 - Ligue `pointer-events` no conteúdo que o app desenha dentro do `overlay`, se o `overlay` estiver com `pointer-events: none`.
-- Com o host `closed` (logout, keepalive `401/419`, 30 min oculto), o `overlay` some junto. Para avisar que a sessão caiu, desenhe na própria página, lendo `inbox.state`.
+- Com o host `closed` (logout, keepalive `401/419`, 30 min oculto), o `overlay` some junto. `closed` não diz o motivo: para avisar que a sessão do app caiu, veja [Caixa em SPA](caixa-em-spa.md#close-e-destroy).
 
 ## Conversa: `EmbedConversation`
 
@@ -91,7 +91,8 @@ import { EmbedConversation } from '@zapmizer/embed/vue'
 | `frame` | `{ title?, configure? }`. |
 | `ready-timeout-ms` | Padrão: 45 000. |
 
-- `brand`, `frame` e `readyTimeoutMs` são lidos uma vez, na montagem. Para mudá-los, ou para trocar o tema, remonte o componente com um `key`.
+- `brand`, `frame` e `readyTimeoutMs` são lidos uma vez, na montagem. Para mudá-los, remonte o componente com um `key`.
+- `open-session` é lida a cada sessão, mas trocar a prop não abre sessão nova. Para trocar o tema ou o cliente, inclua-os no `key`: o componente remonta com um iframe novo. Para manter o iframe velho na tela enquanto a sessão nova abre, chame o `reopen` que o slot recebe (veja [`reopen()`](conversa.md#tema-reopen)).
 - O slot padrão recebe `{ state, retry, reopen, height }`. `state` é o `EmbedState`, `retry` e `reopen` são os da [conversa](conversa.md), e `height` é a última altura crua que a conversa informou (`null` antes da primeira).
 - O evento `message-sent` traz o `message_id` da mensagem que o atendente mandou.
 - O componente não repassa atributos (`inheritAttrs: false`): `class` e `style` nele não vão a lugar nenhum. Estilize o wrapper em volta.

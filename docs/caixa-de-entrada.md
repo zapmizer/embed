@@ -54,7 +54,7 @@ Abrir uma caixa do zero é pesado. Quando o backend devolve `resume_url` e `resu
 
 ## Keepalive
 
-Com a caixa pronta e visível, a lib chama `keepAlive` a cada `keepAliveMs`, para a sessão do app não vencer com o atendente parado dentro do iframe.
+Com a caixa pronta e visível, a lib chama `keepAlive` a cada `keepAliveMs`. Visível quer dizer `setVisible(true)` (no host, o slot preso): a lib não olha se a aba do navegador está em primeiro plano. Isso serve para a sessão do app não vencer com o atendente parado dentro do iframe.
 
 ```ts
 const keepAlive: KeepAlive = async () => {

@@ -17,7 +17,9 @@ type EmbedState =
 | `loading` | Iframe montado, esperando o `ready`. | Carregando, por cima do iframe. |
 | `ready` | O iframe está pronto. | Nada. |
 | `error` | Ver a tabela abaixo. | A mensagem e o botão da `action`. |
-| `closed` | `destroy()`, logout, keepalive `401/419`, host fechado. | Nada, ou um aviso na página. |
+| `closed` | `destroy()`, logout, keepalive `401/419`, host fechado ou descartado. | Nada, ou um aviso na página. |
+
+`closed` não traz o motivo. Para saber se foi a sessão do app que caiu, marque isso no próprio `keepAlive`, quando ele rejeitar com `401` ou `419` (veja [Caixa em SPA](caixa-em-spa.md#close-e-destroy)).
 
 `frame` diz o que está no DOM:
 
@@ -36,7 +38,7 @@ A `action` diz qual botão desenhar:
 | `checkout` | Levar à assinatura. |
 | `null` | Nenhum botão. |
 
-A reabertura automática é da lib e nunca depende da `action`. `retryAfter`, quando vem, é o número que o backend mandou no `Retry-After` de um `429`.
+A reabertura automática é da lib e nunca depende da `action`. `retryAfter`, quando vem, é o número de segundos que o backend mandou no `Retry-After` de um `429`. A lib não espera esse tempo nem tenta de novo sozinha: o app decide se mostra a espera ou trava o botão.
 
 ## Códigos
 

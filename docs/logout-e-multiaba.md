@@ -12,7 +12,7 @@ listenToLogout({ brand: 'zapmizer' })
 
 async function logout() {
   endEmbeds({ brand: 'zapmizer' })
-  await fetch('/logout', { method: 'POST' })
+  await fetch('/logout', { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf } })
 }
 ```
 
@@ -23,9 +23,10 @@ async function logout() {
 - avisa as outras abas em `BroadcastChannel('zapmizer-embed-logout')`. Cada aba que chamou `listenToLogout` fecha os embeds dela e apaga a retomada;
 - um embed que falha ao fechar não impede os outros: todos fecham e a retomada é apagada.
 
+O app que já tem canal próprio entre abas passa `broadcast: false` ao `endEmbeds` e o chama no próprio handler, em cada aba.
+
 `listenToLogout({ brand, storage? })` devolve uma função que para de ouvir.
 
-- O app que já tem canal próprio entre abas passa `broadcast: false` e chama `endEmbeds` no próprio handler.
 - Sem `BroadcastChannel` no navegador, `endEmbeds` ainda fecha esta aba.
 - Sem `storage`, os dois apagam a retomada só no `sessionStorage`. O app que passou outro `storage` para `createInbox`, `createInboxHost` ou `useInboxHost` (por exemplo `window.localStorage`) precisa passar o mesmo `storage` aos dois: `endEmbeds({ brand: 'zapmizer', storage: window.localStorage })` e `listenToLogout({ brand: 'zapmizer', storage: window.localStorage })`.
 

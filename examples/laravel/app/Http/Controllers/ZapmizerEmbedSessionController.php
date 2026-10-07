@@ -62,7 +62,7 @@ class ZapmizerEmbedSessionController extends Controller
         }
 
         // 401 da API = a chave foi revogada. Repassado como 401, a lib leria "a sessão do app caiu" e pediria reload.
-        if ($response->status() === 401) {
+        if ($response->status() === 401 || $response->status() === 419) {
             return response()->json(['code' => 'reauth_required'], 422);
         }
 
