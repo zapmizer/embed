@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned to the version that builds the committed dist/, so the diff below stays meaningful.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+      - run: bun run typecheck
+      - run: bun run build
+      # The diff misses files the build adds (a new chunk), so untracked ones fail too.
+      - name: dist/ matches the build
+        run: |
+          git diff --exit-code -- dist
+          untracked=$(git ls-files --others --exclude-standard -- dist)
+          if [ -n "$untracked" ]; then echo "Untracked files in dist/:"; echo "$untracked"; exit 1; fi
