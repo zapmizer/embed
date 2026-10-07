@@ -81,22 +81,26 @@ function useInboxHost(options) {
 function useInboxSlot(host, options) {
   const slot = ref(null);
   const isEnabled = () => toValue(options.enabled ?? true);
-  function attachIfEnabled() {
-    const element = slot.value;
-    if (element !== null && isEnabled()) {
-      host.attach(element, toValue(options.person));
-    }
-  }
-  onMounted(attachIfEnabled);
-  watch([() => toValue(options.person), isEnabled], ([person, enabled], [previousPerson, wasEnabled]) => {
-    if (enabled && person === null && previousPerson !== null) {
+  watch([slot, () => toValue(options.person), isEnabled], ([element, person, enabled], [previousElement, previousPerson, wasEnabled]) => {
+    if (element !== previousElement) {
+      if (previousElement !== null) {
+        host.detach(previousElement);
+      }
+      if (element !== null && enabled) {
+        host.attach(element, person);
+      } else if (!enabled && wasEnabled) {
+        host.close();
+      }
+    } else if (enabled && person === null && previousPerson !== null) {
       host.close();
     } else if (enabled) {
-      attachIfEnabled();
+      if (element !== null) {
+        host.attach(element, person);
+      }
     } else if (wasEnabled) {
       host.close();
     }
-  });
+  }, { flush: "post" });
   onBeforeUnmount(() => {
     const element = slot.value;
     if (element !== null) {
