@@ -58,14 +58,23 @@ export const EmbedConversation = defineComponent({
 })
 
 export function useInboxHost(options: UseInboxHostOptions): UseInboxHost {
+  const { person, enabled, onState, ...hostOptions } = options
   const state = shallowRef<EmbedState>({ status: 'closed', frame: 'none' })
   const host = createInboxHost({
-    ...options,
+    ...hostOptions,
     onState: (next) => {
       state.value = next
-      options.onState?.(next)
+      onState?.(next)
     },
   })
+
+  if (person !== undefined || enabled !== undefined) {
+    watch([() => toValue(person), () => toValue(enabled ?? true)], ([nextPerson, isEnabled]) => {
+      if (!isEnabled || (person !== undefined && nextPerson !== host.person)) {
+        host.close()
+      }
+    })
+  }
 
   if (getCurrentScope() !== undefined) {
     onScopeDispose(() => host.destroy())
@@ -107,7 +116,11 @@ export function useInboxSlot(host: InboxHost, options: UseInboxSlotOptions): Ref
   return slot
 }
 
-export type UseInboxHostOptions = Omit<InboxHostOptions, 'onState'> & { onState?: (state: EmbedState) => void }
+export type UseInboxHostOptions = Omit<InboxHostOptions, 'onState'> & {
+  onState?: (state: EmbedState) => void
+  person?: MaybeRefOrGetter<string | null>
+  enabled?: MaybeRefOrGetter<boolean>
+}
 
 export type UseInboxHost = { host: InboxHost; state: ShallowRef<EmbedState>; retry: () => void }
 

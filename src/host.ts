@@ -185,6 +185,9 @@ export function createInboxHost(options: InboxHostOptions): InboxHost {
     get state() {
       return state
     },
+    get person() {
+      return person
+    },
     attach,
     detach,
     retry: () => inbox?.retry(),
@@ -210,6 +213,7 @@ export type InboxHost = {
   readonly element: HTMLDivElement
   readonly overlay: HTMLDivElement
   readonly state: EmbedState
+  readonly person: string | null
   attach(slot: HTMLElement, person: string | null): void
   detach(slot: HTMLElement): void
   retry(): void

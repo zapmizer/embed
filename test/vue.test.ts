@@ -139,7 +139,7 @@ describe('useInboxHost + useInboxSlot', () => {
     document.body.innerHTML = ''
   })
 
-  function mountApp(onAtendimento: { value: boolean }, person: { value: string | null }, enabled: { value: boolean }) {
+  function mountApp(onAtendimento: { value: boolean }, person: { value: string | null }, enabled: { value: boolean }, hostWatches: boolean = false) {
     const Screen = defineComponent({
       props: { inboxHost: { type: Object as () => InboxHost, required: true } },
       setup(props) {
@@ -152,7 +152,9 @@ describe('useInboxHost + useInboxSlot', () => {
     mount(
       defineComponent({
         setup() {
-          const inbox = useInboxHost({ brand: BRAND, openSession: sessions.openSession })
+          const inbox = hostWatches
+            ? useInboxHost({ brand: BRAND, openSession: sessions.openSession, person: () => person.value, enabled: () => enabled.value })
+            : useInboxHost({ brand: BRAND, openSession: sessions.openSession })
 
           host = inbox.host
 
@@ -217,6 +219,48 @@ describe('useInboxHost + useInboxSlot', () => {
     await nextTick()
 
     expect(sessions.calls()).toBe(2)
+    expect(host?.element.style.visibility).toBe('')
+  })
+
+  it.each([
+    ['the team changes', (person: { value: string | null }) => (person.value = '4:3'), null],
+    ['another user signs in', (person: { value: string | null }) => (person.value = '7:8'), null],
+    ['the user signs out', (person: { value: string | null }) => (person.value = null), null],
+    ['access stops being available', null, (enabled: { value: boolean }) => (enabled.value = false)],
+  ])('closes the hidden host when %s while the user is on another screen', async (_, changePerson, changeEnabled) => {
+    const onAtendimento = ref(true)
+    const person = ref<string | null>('7:3')
+    const enabled = ref(true)
+
+    mountApp(onAtendimento, person, enabled, true)
+    await nextTick()
+    sessions.resolve(0, session('a', true))
+    await settle()
+    postFrom(onlyFrame(host?.element ?? root), { type: 'ready' })
+    onAtendimento.value = false
+    await nextTick()
+
+    changePerson?.(person)
+    changeEnabled?.(enabled)
+    await nextTick()
+
+    expect(host?.state).toEqual({ status: 'closed', frame: 'none' })
+    expect(framesIn(host?.element ?? root)).toEqual([])
+    expect(window.sessionStorage.getItem('parli-inbox:7:3')).not.toBeNull()
+    expect(sessions.calls()).toBe(1)
+  })
+
+  it('keeps the inbox the slot opened for the new person when the host also watches the person', async () => {
+    const person = ref<string | null>('7:3')
+
+    mountApp(ref(true), person, ref(true), true)
+    await nextTick()
+
+    person.value = '7:4'
+    await nextTick()
+
+    expect(sessions.calls()).toBe(2)
+    expect(host?.state.status).toBe('opening')
     expect(host?.element.style.visibility).toBe('')
   })
 
