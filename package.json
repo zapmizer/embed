@@ -1,7 +1,7 @@
 {
   "name": "@zapmizer/embed",
   "version": "0.1.0",
-  "description": "Conversa e caixa de entrada da Parli/Zapmizer num iframe, seguindo o protocolo do embed.",
+  "description": "Conversa e caixa de entrada do Zapmizer num iframe, seguindo o protocolo do embed.",
   "type": "module",
   "license": "MIT",
   "private": true,

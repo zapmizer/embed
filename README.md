@@ -1,6 +1,6 @@
 # @zapmizer/embed
 
-Abre a conversa e a caixa de entrada da Parli/Zapmizer num iframe e segue o protocolo do embed (eventos, reabertura, retomada, keepalive, logout) sem que o app precise conhecê-lo. Não tem dependência de runtime nem estilo visual: a lib entrega estado, e o app desenha carregando e erro.
+Abre a conversa e a caixa de entrada do Zapmizer num iframe e segue o protocolo do embed (eventos, reabertura, retomada, keepalive, logout) sem que o app precise conhecê-lo. Não tem dependência de runtime nem estilo visual: a lib entrega estado, e o app desenha carregando e erro.
 
 ## Instalação
 
@@ -80,7 +80,7 @@ import { createConversation } from '@zapmizer/embed/conversation'
 
 const conversation = createConversation({
   container: document.querySelector('#conversa'),
-  brand: 'parli',
+  brand: 'zapmizer',
   openSession,
   onState: (state) => render(state),
   onResize: (height) => (wrapper.style.height = `${Math.min(800, Math.max(320, height))}px`),
@@ -103,7 +103,7 @@ import { createInbox } from '@zapmizer/embed/inbox'
 
 const inbox = createInbox({
   container: document.querySelector('#caixa'),
-  brand: 'parli',
+  brand: 'zapmizer',
   person: `${user.id}:${team.id}`,
   openSession,
   keepAlive,
@@ -129,7 +129,7 @@ import { provide } from 'vue'
 import { useInboxHost } from '@zapmizer/embed/vue'
 
 const inbox = useInboxHost({
-  brand: 'parli',
+  brand: 'zapmizer',
   openSession,
   keepAlive,
   person: () => (user.value ? `${user.value.id}:${user.value.current_team.id}` : null),
@@ -180,7 +180,7 @@ import { EmbedConversation } from '@zapmizer/embed/vue'
 </script>
 
 <template>
-  <EmbedConversation :key="theme" brand="parli" :open-session="openSession" />
+  <EmbedConversation :key="theme" brand="zapmizer" :open-session="openSession" />
 </template>
 ```
 
@@ -200,7 +200,7 @@ const clamp = (height) => `${Math.min(800, Math.max(320, height ?? 480))}px`
 
 <template>
   <div style="position: relative">
-    <EmbedConversation brand="parli" :open-session="openSession" :frame="frame" @message-sent="refreshTimeline">
+    <EmbedConversation brand="zapmizer" :open-session="openSession" :frame="frame" @message-sent="refreshTimeline">
       <template #default="{ state, retry, height }">
         <div :style="{ height: clamp(height) }" />
         <ErroDaConversa v-if="state.status === 'error'" class="absolute inset-0" :state="state" @retry="retry" />
@@ -215,7 +215,7 @@ const clamp = (height) => `${Math.min(800, Math.max(320, height ?? 480))}px`
 ```ts
 import { createInboxHost } from '@zapmizer/embed/host'
 
-const host = createInboxHost({ brand: 'parli', openSession, keepAlive, onState: render })
+const host = createInboxHost({ brand: 'zapmizer', openSession, keepAlive, onState: render })
 
 host.attach(slotElement, person)
 host.detach(slotElement)
@@ -227,17 +227,17 @@ host.close()
 ```ts
 import { endEmbeds, listenToLogout } from '@zapmizer/embed/logout'
 
-listenToLogout({ brand: 'parli' })
+listenToLogout({ brand: 'zapmizer' })
 
 async function logout() {
-  endEmbeds({ brand: 'parli' })
+  endEmbeds({ brand: 'zapmizer' })
   await fetch('/logout', { method: 'POST' })
 }
 ```
 
 - `endEmbeds` fecha toda caixa e conversa da marca nesta aba e apaga toda retomada `${brand}-inbox:*`. Também avisa as outras abas em `BroadcastChannel('${brand}-embed-logout')`.
 - O app que já tem canal próprio passa `broadcast: false` e chama `endEmbeds` no próprio handler.
-- Sem `storage`, `endEmbeds` e `listenToLogout` apagam a retomada só no `sessionStorage`. O app que passou outro `storage` para `createInbox`, `createInboxHost` ou `useInboxHost` (por exemplo `window.localStorage`) precisa passar o mesmo `storage` aos dois: `endEmbeds({ brand: 'parli', storage: window.localStorage })` e `listenToLogout({ brand: 'parli', storage: window.localStorage })`.
+- Sem `storage`, `endEmbeds` e `listenToLogout` apagam a retomada só no `sessionStorage`. O app que passou outro `storage` para `createInbox`, `createInboxHost` ou `useInboxHost` (por exemplo `window.localStorage`) precisa passar o mesmo `storage` aos dois: `endEmbeds({ brand: 'zapmizer', storage: window.localStorage })` e `listenToLogout({ brand: 'zapmizer', storage: window.localStorage })`.
 - Um embed que falha ao fechar não impede os outros: todos fecham e a retomada é apagada.
 
 ## Desenvolvimento
