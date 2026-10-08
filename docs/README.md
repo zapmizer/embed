@@ -1,6 +1,6 @@
 # Documentação do @zapmizer/embed
 
-Esta pasta vai junto com o código. Ao abrir pela tag que o app fixou (por exemplo `v0.1.1`), você lê a doc daquela versão.
+Esta pasta vai junto com o código. Ao abrir pela tag que o app fixou (por exemplo `v0.1.2`), você lê a doc daquela versão.
 
 1. [Começando](comecando.md): instalação, módulos e o primeiro iframe.
 2. [Backend: o endpoint de sessão](backend.md): o contrato que o servidor do app cumpre, com exemplos em Laravel e em JavaScript puro.
