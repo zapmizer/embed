@@ -1,6 +1,6 @@
 import {
   createInbox2
-} from "./conversation-fwv8fg91.js";
+} from "./conversation-6gchkt8h.js";
 import {
   defaultClock,
   isolated

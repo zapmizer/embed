@@ -83,7 +83,8 @@ Com `setVisible(false)`, o iframe continua vivo, mas:
 
 - o keepalive para;
 - um `session_expired` não abre sessão nova na hora: o estado continua `ready`, e a sessão nova é pedida quando a caixa volta a aparecer;
-- uma falha ao abrir com a caixa oculta (recusa com ação `retry`, prazo do `ready` ou `session_expired` antes do `ready`) é tentada de novo sozinha quando ela volta a aparecer. `session_replaced` nunca é retomado sozinho.
+- uma falha ao abrir com a caixa oculta (recusa com ação `retry`, prazo do `ready` ou `session_expired` antes do `ready`) é tentada de novo sozinha quando ela volta a aparecer. `session_replaced` nunca é retomado sozinho;
+- um erro com ação `reconnect` ou `checkout` se resolve fora da caixa, então a lib pede uma sessão nova sempre que a caixa volta a aparecer, mesmo que a recusa tenha chegado com ela visível. Se o problema continuar, a recusa se repete. Erros sem ação (`rejected`, por exemplo) não são retomados sozinhos.
 
 O host do SPA chama `setVisible` por você.
 
