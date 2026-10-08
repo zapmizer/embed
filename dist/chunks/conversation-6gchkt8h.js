@@ -208,10 +208,14 @@ function visibility(state, visible, now) {
   if (visible && state.view.status === "ready" && state.reopenOnShow) {
     return openFresh({ ...next, lastAutoReopenAt: now }, "stale", []);
   }
-  if (visible && state.view.status === "error" && state.retryOnShow) {
+  if (visible && state.view.status === "error" && (state.retryOnShow || !state.visible && resolvedElsewhere(state.view.code))) {
     return openFresh(next, "none", [{ type: "unmount_iframe" }]);
   }
   return { state: next, effects: [] };
+}
+function resolvedElsewhere(code) {
+  const action = actionFor2(code);
+  return action === "reconnect" || action === "checkout";
 }
 function fromFrame(state, message, now) {
   const view = state.view;

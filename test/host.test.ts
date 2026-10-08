@@ -278,6 +278,40 @@ describe('inbox host for SPAs', () => {
     expect(host.state).toMatchObject({ status: 'error', code: 'session_replaced' })
   })
 
+  for (const code of ['reauth_required', 'connection_without_number', 'number_unavailable', 'subscription_required']) {
+    it(`asks for a new session when the user comes back to an inbox refused with ${code}`, async () => {
+      host.attach(slot.element, '7:3')
+      sessions.reject(0, { status: 403, code })
+      await settle()
+      host.detach(slot.element)
+
+      host.attach(slot.element, '7:3')
+
+      expect(sessions.calls()).toBe(2)
+    })
+  }
+
+  it('does not ask for a new session when an inbox refused with reauth_required attaches again while shown', async () => {
+    host.attach(slot.element, '7:3')
+    sessions.reject(0, { status: 403, code: 'reauth_required' })
+    await settle()
+
+    host.attach(slot.element, '7:3')
+
+    expect(sessions.calls()).toBe(1)
+  })
+
+  it('does not ask for a new session when the user comes back to an inbox refused with no action', async () => {
+    host.attach(slot.element, '7:3')
+    sessions.reject(0, { status: 403, code: 'rejected' })
+    await settle()
+    host.detach(slot.element)
+
+    host.attach(slot.element, '7:3')
+
+    expect(sessions.calls()).toBe(1)
+  })
+
   it('retries through the host', async () => {
     host.attach(slot.element, '7:3')
     sessions.reject(0, { status: 503, code: 'unavailable' })

@@ -1,7 +1,7 @@
 import { actionFor, codeForRefusal } from '../errors'
 import type { EmbedEndType, EmbedMessage } from '../messages'
 import type { ResumeEntry } from '../resume'
-import type { MachineView, SessionOpened, SessionRefused } from '../state'
+import type { EmbedErrorCode, MachineView, SessionOpened, SessionRefused } from '../state'
 import { canAutoReopen, failed } from './view'
 
 const RESUME_EFFECTS: ReadonlySet<string> = new Set(['read_resume', 'remember_resume', 'forget_resume_if', 'forget_other_resumes', 'forget_all_resumes'])
@@ -231,11 +231,17 @@ function visibility(state: InboxMachine, visible: boolean, now: number): InboxSt
     return openFresh({ ...next, lastAutoReopenAt: now }, 'stale', [])
   }
 
-  if (visible && state.view.status === 'error' && state.retryOnShow) {
+  if (visible && state.view.status === 'error' && (state.retryOnShow || (!state.visible && resolvedElsewhere(state.view.code)))) {
     return openFresh(next, 'none', [{ type: 'unmount_iframe' }])
   }
 
   return { state: next, effects: [] }
+}
+
+function resolvedElsewhere(code: EmbedErrorCode): boolean {
+  const action = actionFor(code)
+
+  return action === 'reconnect' || action === 'checkout'
 }
 
 function fromFrame(state: InboxMachine, message: EmbedMessage, now: number): InboxStep {
