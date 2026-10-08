@@ -1,6 +1,6 @@
 {
   "name": "@zapmizer/embed",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Conversa e caixa de entrada do Zapmizer num iframe, seguindo o protocolo do embed.",
   "type": "module",
   "license": "MIT",
