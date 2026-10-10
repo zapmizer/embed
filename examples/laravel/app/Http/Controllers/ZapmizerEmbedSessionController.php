@@ -46,7 +46,7 @@ class ZapmizerEmbedSessionController extends Controller
                     ...$payload,
                     // Atrás de proxy, sem TrustProxies, isso sai http:// ou com o host interno, e a API responde origin_not_allowed.
                     'parent_origin' => $request->getSchemeAndHttpHost(),
-                    'user' => ['id' => (string) $request->user()->id, 'name' => $request->user()->name],
+                    'user' => ['id' => (string) $request->user()->id, 'name' => $request->user()->name, 'email' => $request->user()->email],
                 ]);
         } catch (ConnectionException) {
             return response()->json(['code' => 'unavailable'], 503);

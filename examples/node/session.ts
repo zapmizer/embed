@@ -7,7 +7,7 @@ const API = 'https://app.zapmizer.com/api/'
 export type EmbedSessionInput = {
   token: string // a chave da integração com o Zapmizer, guardada no servidor do app
   parentOrigin: string // a origem da página que mostra o iframe, por exemplo https://app.seuapp.com
-  user: { id: string; name: string }
+  user: { id: string; name: string; email?: string } // a pessoa logada: o atendimento sai em nome dela
   api?: string // a base da API, para apontar para staging ou para uma API falsa nos testes. Padrão: produção.
 } & ({ component: 'inbox' } | { component: 'conversation'; phone: string; appearance: Appearance })
 
