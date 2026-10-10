@@ -2,6 +2,8 @@
 
 A caixa de entrada é o atendimento inteiro do WhatsApp dentro do app. Esta página cobre `createInbox`, que serve a uma página sem SPA: a caixa vive enquanto a página está aberta. Num SPA, use o [host persistente](caixa-em-spa.md), que é construído sobre `createInbox` e aceita as mesmas opções. Exemplo completo: [`examples/vanilla/inbox.ts`](../examples/vanilla/inbox.ts).
 
+Quem atende na caixa é o `user` que o backend do app manda ao criar a sessão: mensagens, tickets e notas saem em nome dele. Veja [O `user`](backend.md#o-user).
+
 ```ts
 import { createInbox } from '@zapmizer/embed/inbox'
 

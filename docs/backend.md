@@ -17,11 +17,21 @@ Este é o ponto que mais confunde. A lib não fala com a API: ela lê a resposta
 | --- | --- | --- |
 | `component` | `'inbox'` | `'conversation'` |
 | `parent_origin` | origem da página que mostra o iframe | idem |
-| `user` | `{ id, name }` de quem atende | idem |
+| `user` | `{ id, name, email? }` de quem atende. Veja [O `user`](#o-user) | idem |
 | `phone` | não vai | telefone do cliente |
 | `appearance` | não vai | `{ theme: 'light' \| 'dark', color_primary?, radius?, font_family? }` |
 
 Sucesso é `201` com `{ url, expires_at, resume_url?, resume_until? }`. Recusa vem com o motivo em `error`.
+
+### O `user`
+
+O `user` define em nome de quem o atendimento sai. Com o `user.id`, o Zapmizer cria o atendente na equipe na primeira sessão e o reaproveita nas seguintes. Tudo o que acontece no iframe sai em nome desse atendente: mensagens, tickets e notas.
+
+- `id` é o identificador da pessoa no app, como texto. Precisa ser estável: outro `id` vira outro atendente.
+- `name` é o nome do atendente.
+- `email` é opcional.
+
+Mande sempre a pessoa logada no app, nunca um usuário fixo da integração: com um usuário só, todo o atendimento sairia em nome dele.
 
 ## O que o backend devolve ao navegador
 
@@ -99,7 +109,7 @@ private function open(Request $request, array $payload): JsonResponse
             ->post('embed/sessions', [
                 ...$payload,
                 'parent_origin' => $request->getSchemeAndHttpHost(),
-                'user' => ['id' => (string) $request->user()->id, 'name' => $request->user()->name],
+                'user' => ['id' => (string) $request->user()->id, 'name' => $request->user()->name, 'email' => $request->user()->email],
             ]);
     } catch (ConnectionException) {
         return response()->json(['code' => 'unavailable'], 503);

@@ -2,6 +2,8 @@
 
 A conversa mostra o histórico de um cliente e deixa o atendente responder sem sair da tela do app. Exemplo completo: [`examples/vanilla/conversation.ts`](../examples/vanilla/conversation.ts) (sem framework) e [`examples/vue/CustomerConversation.vue`](../examples/vue/CustomerConversation.vue).
 
+O atendente é o `user` que o backend do app manda ao criar a sessão: o que ele responde sai em nome dele. Veja [O `user`](backend.md#o-user).
+
 ```ts
 import { createConversation } from '@zapmizer/embed/conversation'
 
