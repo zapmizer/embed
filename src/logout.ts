@@ -1,6 +1,6 @@
-import { endRegisteredEmbeds } from './registry'
-import { defaultResumeStorage, forgetAllResumes } from './resume'
-import type { ResumeStorage } from './resume'
+import { endRegisteredEmbeds } from './registry.js'
+import { defaultResumeStorage, forgetAllResumes } from './resume.js'
+import type { ResumeStorage } from './resume.js'
 
 export function endEmbeds(options: EndEmbedsOptions): void {
   endLocally(options.brand, options.storage)

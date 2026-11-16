@@ -1,4 +1,4 @@
-import type { EmbedAction, EmbedErrorCode, SessionRefused } from './state'
+import type { EmbedAction, EmbedErrorCode, SessionRefused } from './state.js'
 
 const RETRY_CODES: ReadonlySet<string> = new Set(['session_expired', 'inbox_expired', 'session_revoked', 'session_replaced', 'ready_timeout', 'unavailable', 'rate_limited'])
 

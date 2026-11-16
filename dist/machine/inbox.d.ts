@@ -1,6 +1,6 @@
-import type { EmbedMessage } from '../messages';
-import type { ResumeEntry } from '../resume';
-import type { MachineView, SessionOpened, SessionRefused } from '../state';
+import type { EmbedMessage } from '../messages.js';
+import type { ResumeEntry } from '../resume.js';
+import type { MachineView, SessionOpened, SessionRefused } from '../state.js';
 export declare function initialState(options: {
     resumable: boolean;
     visible: boolean;

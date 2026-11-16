@@ -1,9 +1,9 @@
-import { CONVERSATION_FRAME, createFrameSlot, defaultClock, isolated, requestSession, serialDispatcher } from './driver'
-import { initialState, transition } from './machine/conversation'
-import type { ConversationEffect, ConversationEvent, ConversationMachine } from './machine/conversation'
-import { exposed } from './machine/view'
-import { registerEmbed } from './registry'
-import type { Clock, EmbedState, FrameOptions, OpenSession } from './state'
+import { CONVERSATION_FRAME, createFrameSlot, defaultClock, isolated, requestSession, serialDispatcher } from './driver.js'
+import { initialState, transition } from './machine/conversation.js'
+import type { ConversationEffect, ConversationEvent, ConversationMachine } from './machine/conversation.js'
+import { exposed } from './machine/view.js'
+import { registerEmbed } from './registry.js'
+import type { Clock, EmbedState, FrameOptions, OpenSession } from './state.js'
 
 export function createConversation(options: ConversationOptions): Conversation {
   const clock = options.clock ?? defaultClock

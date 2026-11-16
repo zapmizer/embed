@@ -1,5 +1,5 @@
-import type { ResumeStorage } from './resume';
-import type { Clock, EmbedState, FrameOptions, KeepAlive, OpenSession } from './state';
+import type { ResumeStorage } from './resume.js';
+import type { Clock, EmbedState, FrameOptions, KeepAlive, OpenSession } from './state.js';
 export declare function createInbox(options: InboxOptions): Inbox;
 export type InboxOptions = {
     container: HTMLElement;

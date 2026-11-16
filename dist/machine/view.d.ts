@@ -1,4 +1,4 @@
-import type { EmbedErrorCode, EmbedState, MachineView } from '../state';
+import type { EmbedErrorCode, EmbedState, MachineView } from '../state.js';
 export declare const AUTO_REOPEN_GAP_MS = 60000;
 export declare function failed(code: EmbedErrorCode, frame: 'none' | 'loading', retryAfter?: number): EmbedState;
 export declare function exposed(view: MachineView): EmbedState;

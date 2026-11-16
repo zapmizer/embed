@@ -1,10 +1,10 @@
 import { defineComponent, getCurrentScope, h, onBeforeUnmount, onMounted, onScopeDispose, ref, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, PropType, Ref, ShallowRef } from 'vue'
-import { createConversation } from './conversation'
-import type { Conversation } from './conversation'
-import { createInboxHost } from './host'
-import type { InboxHost, InboxHostOptions } from './host'
-import type { EmbedState, FrameOptions, OpenSession } from './state'
+import { createConversation } from './conversation.js'
+import type { Conversation } from './conversation.js'
+import { createInboxHost } from './host.js'
+import type { InboxHost, InboxHostOptions } from './host.js'
+import type { EmbedState, FrameOptions, OpenSession } from './state.js'
 
 export const EmbedConversation = defineComponent({
   name: 'EmbedConversation',

@@ -1,8 +1,8 @@
-import { actionFor, codeForRefusal } from '../errors'
-import type { EmbedEndType, EmbedMessage } from '../messages'
-import type { ResumeEntry } from '../resume'
-import type { EmbedErrorCode, MachineView, SessionOpened, SessionRefused } from '../state'
-import { canAutoReopen, failed } from './view'
+import { actionFor, codeForRefusal } from '../errors.js'
+import type { EmbedEndType, EmbedMessage } from '../messages.js'
+import type { ResumeEntry } from '../resume.js'
+import type { EmbedErrorCode, MachineView, SessionOpened, SessionRefused } from '../state.js'
+import { canAutoReopen, failed } from './view.js'
 
 const RESUME_EFFECTS: ReadonlySet<string> = new Set(['read_resume', 'remember_resume', 'forget_resume_if', 'forget_other_resumes', 'forget_all_resumes'])
 

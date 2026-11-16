@@ -1,12 +1,12 @@
-import { INBOX_FRAME, createFrameSlot, defaultClock, isolated, requestSession, serialDispatcher } from './driver'
-import { toRefusal } from './errors'
-import { initialState, transition } from './machine/inbox'
-import type { InboxEffect, InboxEvent, InboxMachine } from './machine/inbox'
-import { exposed } from './machine/view'
-import { registerEmbed } from './registry'
-import { defaultResumeStorage, forgetAllResumes, forgetOtherResumes, forgetResumeIf, readResume, rememberResume, resumeKey } from './resume'
-import type { ResumeStorage } from './resume'
-import type { Clock, EmbedState, FrameOptions, KeepAlive, OpenSession } from './state'
+import { INBOX_FRAME, createFrameSlot, defaultClock, isolated, requestSession, serialDispatcher } from './driver.js'
+import { toRefusal } from './errors.js'
+import { initialState, transition } from './machine/inbox.js'
+import type { InboxEffect, InboxEvent, InboxMachine } from './machine/inbox.js'
+import { exposed } from './machine/view.js'
+import { registerEmbed } from './registry.js'
+import { defaultResumeStorage, forgetAllResumes, forgetOtherResumes, forgetResumeIf, readResume, rememberResume, resumeKey } from './resume.js'
+import type { ResumeStorage } from './resume.js'
+import type { Clock, EmbedState, FrameOptions, KeepAlive, OpenSession } from './state.js'
 
 export function createInbox(options: InboxOptions): Inbox {
   const clock = options.clock ?? defaultClock

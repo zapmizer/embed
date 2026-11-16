@@ -1,4 +1,4 @@
-import type { Clock, EmbedState, FrameOptions, OpenSession } from './state';
+import type { Clock, EmbedState, FrameOptions, OpenSession } from './state.js';
 export declare function createConversation(options: ConversationOptions): Conversation;
 export type ConversationOptions = {
     container: HTMLElement;

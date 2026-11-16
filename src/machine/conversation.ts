@@ -1,7 +1,7 @@
-import { codeForRefusal } from '../errors'
-import type { EmbedEndType, EmbedMessage } from '../messages'
-import type { MachineView, SessionOpened, SessionRefused } from '../state'
-import { canAutoReopen, failed } from './view'
+import { codeForRefusal } from '../errors.js'
+import type { EmbedEndType, EmbedMessage } from '../messages.js'
+import type { MachineView, SessionOpened, SessionRefused } from '../state.js'
+import { canAutoReopen, failed } from './view.js'
 
 export function initialState(): ConversationMachine {
   return { view: { status: 'idle', frame: 'none' }, gen: 0, lastAutoReopenAt: null }
