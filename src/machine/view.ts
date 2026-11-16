@@ -1,5 +1,5 @@
-import { actionFor } from '../errors'
-import type { EmbedErrorCode, EmbedState, MachineView } from '../state'
+import { actionFor } from '../errors.js'
+import type { EmbedErrorCode, EmbedState, MachineView } from '../state.js'
 
 export const AUTO_REOPEN_GAP_MS = 60_000
 

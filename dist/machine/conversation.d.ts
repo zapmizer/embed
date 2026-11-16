@@ -1,5 +1,5 @@
-import type { EmbedMessage } from '../messages';
-import type { MachineView, SessionOpened, SessionRefused } from '../state';
+import type { EmbedMessage } from '../messages.js';
+import type { MachineView, SessionOpened, SessionRefused } from '../state.js';
 export declare function initialState(): ConversationMachine;
 export declare function transition(state: ConversationMachine, event: ConversationEvent, ctx: {
     now: number;

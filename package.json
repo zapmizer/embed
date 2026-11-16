@@ -43,6 +43,34 @@
       "import": "./dist/vue.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "conversation": [
+        "dist/conversation.d.ts"
+      ],
+      "inbox": [
+        "dist/inbox.d.ts"
+      ],
+      "host": [
+        "dist/host.d.ts"
+      ],
+      "logout": [
+        "dist/logout.d.ts"
+      ],
+      "errors": [
+        "dist/errors.d.ts"
+      ],
+      "resume": [
+        "dist/resume.d.ts"
+      ],
+      "state": [
+        "dist/state.d.ts"
+      ],
+      "vue": [
+        "dist/vue.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "build": "rm -rf dist && bun build src/conversation.ts src/inbox.ts src/host.ts src/logout.ts src/errors.ts src/resume.ts src/state.ts src/vue.ts --root src --outdir dist --format esm --target browser --splitting --external vue --chunk-naming 'chunks/[name]-[hash].[ext]' && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -62,6 +90,7 @@
     "@types/bun": "^1.4.2",
     "happy-dom": "^20.14.5",
     "typescript": "^7.0.2",
+    "typescript5": "npm:typescript@5.9.3",
     "vue": "^3.5.43"
   }
 }

@@ -1,8 +1,8 @@
-import { defaultClock, isolated } from './driver'
-import { createInbox } from './inbox'
-import type { Inbox } from './inbox'
-import type { ResumeStorage } from './resume'
-import type { Clock, EmbedState, FrameOptions, KeepAlive, OpenSession } from './state'
+import { defaultClock, isolated } from './driver.js'
+import { createInbox } from './inbox.js'
+import type { Inbox } from './inbox.js'
+import type { ResumeStorage } from './resume.js'
+import type { Clock, EmbedState, FrameOptions, KeepAlive, OpenSession } from './state.js'
 
 export function createInboxHost(options: InboxHostOptions): InboxHost {
   const clock = options.clock ?? defaultClock

@@ -1,6 +1,6 @@
 import type { MaybeRefOrGetter, PropType, Ref, ShallowRef } from 'vue';
-import type { InboxHost, InboxHostOptions } from './host';
-import type { EmbedState, FrameOptions, OpenSession } from './state';
+import type { InboxHost, InboxHostOptions } from './host.js';
+import type { EmbedState, FrameOptions, OpenSession } from './state.js';
 export declare const EmbedConversation: import("vue").DefineComponent<import("vue").ExtractPropTypes<{
     openSession: {
         type: PropType<OpenSession>;

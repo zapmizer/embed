@@ -1,8 +1,8 @@
-import { toRefusal } from './errors'
-import { parseEmbedMessage } from './messages'
-import type { EmbedMessage } from './messages'
-import { webOriginOf } from './resume'
-import type { Clock, FrameOptions, OpenSession, SessionOpened, SessionRefused } from './state'
+import { toRefusal } from './errors.js'
+import { parseEmbedMessage } from './messages.js'
+import type { EmbedMessage } from './messages.js'
+import { webOriginOf } from './resume.js'
+import type { Clock, FrameOptions, OpenSession, SessionOpened, SessionRefused } from './state.js'
 
 const CONVERSATION_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-storage-access-by-user-activation'
 

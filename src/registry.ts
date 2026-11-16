@@ -1,4 +1,4 @@
-import { isolated } from './driver'
+import { isolated } from './driver.js'
 
 const live = new Map<string, Set<() => void>>()
 

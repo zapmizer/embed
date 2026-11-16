@@ -1,5 +1,5 @@
-import type { EmbedMessage } from './messages';
-import type { Clock, FrameOptions, OpenSession, SessionOpened, SessionRefused } from './state';
+import type { EmbedMessage } from './messages.js';
+import type { Clock, FrameOptions, OpenSession, SessionOpened, SessionRefused } from './state.js';
 export declare const CONVERSATION_FRAME: FrameKind;
 export declare const INBOX_FRAME: FrameKind;
 export declare const defaultClock: Clock;
