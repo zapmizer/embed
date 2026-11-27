@@ -1,6 +1,6 @@
 import {
   actionFor2
-} from "./conversation-aaj2s2qd.js";
+} from "./conversation-vfvm9epf.js";
 
 // src/machine/view.ts
 var AUTO_REOPEN_GAP_MS = 60000;

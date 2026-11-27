@@ -2,7 +2,7 @@ import {
   actionFor2,
   codeForRefusal2,
   toRefusal2
-} from "./conversation-aaj2s2qd.js";
+} from "./conversation-vfvm9epf.js";
 import {
   resumeKey2,
   defaultResumeStorage2,
@@ -16,7 +16,7 @@ import {
   failed,
   exposed,
   canAutoReopen
-} from "./conversation-7yykfv7d.js";
+} from "./conversation-29rv844y.js";
 import {
   INBOX_FRAME,
   defaultClock,
@@ -25,7 +25,7 @@ import {
   requestSession,
   createFrameSlot,
   registerEmbed
-} from "./conversation-ss1ark8m.js";
+} from "./conversation-qxh51kse.js";
 
 // src/machine/inbox.ts
 var RESUME_EFFECTS = new Set(["read_resume", "remember_resume", "forget_resume_if", "forget_other_resumes", "forget_all_resumes"]);

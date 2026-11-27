@@ -1,10 +1,10 @@
 import {
   createInbox2
-} from "./conversation-f6n1bd8z.js";
+} from "./conversation-cxmc6b6p.js";
 import {
   defaultClock,
   isolated
-} from "./conversation-ss1ark8m.js";
+} from "./conversation-qxh51kse.js";
 
 // src/host.ts
 function createInboxHost2(options) {

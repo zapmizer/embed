@@ -121,8 +121,8 @@ describe('default messages', () => {
     expect(defaultMessages[code]?.length ?? 0).toBeGreaterThan(0)
   })
 
-  it('tells the removed attendant to ask the owner, not to try again', () => {
-    expect(defaultMessages.attendant_removed).toBe('Você foi removido do time deste cliente. Peça ao dono para adicionar você de novo.')
+  it('tells the attendant without access to ask the team owner, not to try again', () => {
+    expect(defaultMessages.attendant_removed).toBe('Você não tem mais acesso a este atendimento. Peça ao dono do time para liberar seu acesso de novo.')
   })
 
   it('never names a brand', () => {
