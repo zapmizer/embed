@@ -1,6 +1,6 @@
 import {
   createInbox2
-} from "./chunks/conversation-f33a7bzq.js";
+} from "./chunks/conversation-f6n1bd8z.js";
 import"./chunks/conversation-7yykfv7d.js";
 import"./chunks/conversation-ss1ark8m.js";
 import"./chunks/conversation-aaj2s2qd.js";

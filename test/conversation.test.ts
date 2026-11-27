@@ -170,6 +170,29 @@ describe('embedded conversation', () => {
     expect(conversation.state).toEqual({ status: 'ready', frame: 'live' })
   })
 
+  it('opens a new session when the account changes before the conversation loads', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'member_linked' })
+
+    expect(sessions.calls()).toBe(2)
+    expect(conversation.state).toEqual({ status: 'opening', frame: 'stale' })
+  })
+
+  it('shows the button instead of looping when member_linked comes again within a minute', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+    sessions.resolve(1, session('b'))
+    await settle()
+    postFrom(onlyFrame(container), { type: 'ready' })
+    postFrom(onlyFrame(container), { type: 'member_linked' })
+
+    expect(sessions.calls()).toBe(2)
+    expect(conversation.state).toEqual({ status: 'error', frame: 'none', code: 'session_expired', action: 'retry' })
+  })
+
   it('still renews by itself when the session expires right after the person linked their account', async () => {
     const iframe = await openLoaded()
 

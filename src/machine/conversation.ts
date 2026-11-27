@@ -4,7 +4,7 @@ import type { MachineView, SessionOpened, SessionRefused } from '../state.js'
 import { canAutoReopen, failed } from './view.js'
 
 export function initialState(): ConversationMachine {
-  return { view: { status: 'idle', frame: 'none' }, gen: 0, lastAutoReopenAt: null }
+  return { view: { status: 'idle', frame: 'none' }, gen: 0, lastAutoReopenAt: null, lastLinkReopenAt: null }
 }
 
 export function transition(state: ConversationMachine, event: ConversationEvent, ctx: { now: number }): ConversationStep {
@@ -138,12 +138,18 @@ function fromFrame(state: ConversationMachine, message: EmbedMessage, now: numbe
     return stay(state)
   }
 
+  const armed: ConversationEffect[] = view.status === 'loading' ? [{ type: 'clear_ready_timeout' }] : []
+
   if (message.type === 'member_linked') {
-    return view.status === 'ready' ? opening(state, 'stale') : stay(state)
+    if (!framed && view.status !== 'ready') {
+      return stay(state)
+    }
+
+    return canAutoReopen(state.lastLinkReopenAt, now) ? opening({ ...state, lastLinkReopenAt: now }, 'stale', armed) : ended(state, 'session_expired', armed)
   }
 
   if (framed) {
-    return ended(state, message.type, view.status === 'loading' ? [{ type: 'clear_ready_timeout' }] : [])
+    return ended(state, message.type, armed)
   }
 
   if (view.status !== 'ready') {
@@ -165,7 +171,7 @@ function stay(state: ConversationMachine): ConversationStep {
   return { state, effects: [] }
 }
 
-export type ConversationMachine = { view: MachineView; gen: number; lastAutoReopenAt: number | null }
+export type ConversationMachine = { view: MachineView; gen: number; lastAutoReopenAt: number | null; lastLinkReopenAt: number | null }
 
 export type ConversationEvent =
   | { type: 'start' }

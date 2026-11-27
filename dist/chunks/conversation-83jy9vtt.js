@@ -18,7 +18,7 @@ import {
 
 // src/machine/conversation.ts
 function initialState() {
-  return { view: { status: "idle", frame: "none" }, gen: 0, lastAutoReopenAt: null };
+  return { view: { status: "idle", frame: "none" }, gen: 0, lastAutoReopenAt: null, lastLinkReopenAt: null };
 }
 function transition(state, event, ctx) {
   const step = decide(state, event, ctx.now);
@@ -121,11 +121,15 @@ function fromFrame(state, message, now) {
   if (message.type === "session_replaced") {
     return stay(state);
   }
+  const armed = view.status === "loading" ? [{ type: "clear_ready_timeout" }] : [];
   if (message.type === "member_linked") {
-    return view.status === "ready" ? opening(state, "stale") : stay(state);
+    if (!framed && view.status !== "ready") {
+      return stay(state);
+    }
+    return canAutoReopen(state.lastLinkReopenAt, now) ? opening({ ...state, lastLinkReopenAt: now }, "stale", armed) : ended(state, "session_expired", armed);
   }
   if (framed) {
-    return ended(state, message.type, view.status === "loading" ? [{ type: "clear_ready_timeout" }] : []);
+    return ended(state, message.type, armed);
   }
   if (view.status !== "ready") {
     return stay(state);

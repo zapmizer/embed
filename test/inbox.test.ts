@@ -186,6 +186,45 @@ describe('embedded inbox', () => {
     expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
   })
 
+  it('opens a new session when the account changes before the inbox loads, and ignores the late ready', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'member_linked' })
+    expect(sessions.calls()).toBe(2)
+    postFrom(iframe, { type: 'ready' })
+    clock.advance(45_000)
+
+    expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
+    expect(storedResume()).toBeNull()
+  })
+
+  it('shows the button instead of looping when member_linked comes again within a minute', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+    sessions.resolve(1, session('b'))
+    await settle()
+    postFrom(onlyFrame(container), { type: 'ready' })
+    postFrom(onlyFrame(container), { type: 'member_linked' })
+
+    expect(sessions.calls()).toBe(2)
+    expect(inbox.state).toEqual({ status: 'error', frame: 'none', code: 'inbox_expired', action: 'retry' })
+    expect(framesIn(container)).toHaveLength(0)
+  })
+
+  it('shows the removal and drops the old inbox when the new session after member_linked is refused', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+    sessions.reject(1, { status: 422, code: 'attendant_removed' })
+    await settle()
+
+    expect(inbox.state).toEqual({ status: 'error', frame: 'none', code: 'attendant_removed', action: null })
+    expect(framesIn(container)).toHaveLength(0)
+  })
+
   it('shows the removal without a retry when the owner removed the attendant', async () => {
     open()
     sessions.reject(0, { status: 422, code: 'attendant_removed' })
@@ -595,14 +634,18 @@ describe('embedded inbox', () => {
       expect(inbox.state).toEqual({ status: 'ready', frame: 'live' })
     })
 
-    it('opens the new session right away when the person links their account while hidden', async () => {
+    it('waits to be shown to open the new session when the person links their account while hidden', async () => {
       const iframe = await openLoaded()
 
       postFrom(iframe, { type: 'ready' })
       inbox.setVisible(false)
       postFrom(iframe, { type: 'member_linked' })
+      expect(sessions.calls()).toBe(1)
+      expect(storedResume()).toBeNull()
+      inbox.setVisible(true)
 
       expect(sessions.calls()).toBe(2)
+      expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
     })
 
     it('does not take the inbox back by itself when another tab took it while hidden (S20)', async () => {

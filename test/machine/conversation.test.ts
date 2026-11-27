@@ -169,10 +169,58 @@ describe('conversation machine — table', () => {
     expect(result.state.lastAutoReopenAt).toBe(NOW)
   })
 
+  it('loading + member_linked → opening(stale), clear_ready_timeout, open_session', () => {
+    const result = step(loading(), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.effects).toEqual([{ type: 'clear_ready_timeout' }, { type: 'open_session', gen: 1 }, { type: 'notify' }])
+    expect(step(result.state, frame('ready'))).toEqual({ state: result.state, effects: [] })
+  })
+
+  it('error(loading) + member_linked → opening(stale), open_session', () => {
+    const result = step(timedOut(), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.effects).toEqual([{ type: 'open_session', gen: 1 }, { type: 'notify' }])
+  })
+
+  it('member_linked < 60 s after a member_linked reopening → error(session_expired, none), unmount_iframe', () => {
+    const linked = step(ready(), frame('member_linked')).state
+    const readyAgain = [opened(1, URL_B), frame('ready')].reduce((state, event) => step(state, event).state, linked)
+    const result = step(readyAgain, frame('member_linked'), NOW + 59_999)
+
+    expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'session_expired', action: 'retry' })
+    expect(result.effects).toEqual([{ type: 'unmount_iframe' }, { type: 'notify' }])
+  })
+
+  it('member_linked < 60 s after a member_linked reopening, before ready → error, clear_ready_timeout', () => {
+    const loadingAgain = step(step(ready(), frame('member_linked')).state, opened(1, URL_B)).state
+    const result = step(loadingAgain, frame('member_linked'), NOW + 1_000)
+
+    expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'session_expired', action: 'retry' })
+    expect(result.effects).toEqual([{ type: 'clear_ready_timeout' }, { type: 'unmount_iframe' }, { type: 'notify' }])
+  })
+
+  it('member_linked ≥ 60 s after a member_linked reopening → reopens again', () => {
+    const linked = step(ready(), frame('member_linked')).state
+    const readyAgain = [opened(1, URL_B), frame('ready')].reduce((state, event) => step(state, event).state, linked)
+
+    expect(step(readyAgain, frame('member_linked'), NOW + 60_000).state.view).toEqual({ status: 'opening', frame: 'stale' })
+  })
+
+  it('member_linked + refusal → error with the action of the code and the stale iframe unmounted', () => {
+    const linked = step(ready(), frame('member_linked')).state
+    const result = step(linked, { type: 'session_refused', gen: linked.gen, refusal: { status: 422, code: 'attendant_removed' } })
+
+    expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'attendant_removed', action: null })
+    expect(result.effects).toEqual([{ type: 'unmount_iframe' }, { type: 'notify' }])
+  })
+
   it.each([
+    ['idle', () => initialState()],
     ['opening', opening],
-    ['loading', loading],
-    ['error(loading)', timedOut],
+    ['opening(stale), from the old iframe', () => step(ready(), frame('member_linked')).state],
+    ['error(none)', () => step(ready(), frame('session_revoked')).state],
   ] as const)('%s ignores member_linked', (_, state) => {
     const before = state()
 

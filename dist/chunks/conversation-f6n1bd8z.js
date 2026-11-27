@@ -38,8 +38,10 @@ function initialState(options) {
     ownResumeUrl: null,
     pendingResume: null,
     lastAutoReopenAt: null,
+    lastLinkReopenAt: null,
     visible: options.visible,
     reopenOnShow: false,
+    linkOnShow: false,
     retryOnShow: false,
     resumeHopUsed: false,
     reading: null
@@ -133,6 +135,7 @@ function openFresh(state, frame, before) {
       pendingResume: null,
       resumeHopUsed: false,
       reopenOnShow: false,
+      linkOnShow: false,
       retryOnShow: false,
       reading: null
     },
@@ -151,6 +154,7 @@ function loadResume(state, entry, before, resumeHopUsed) {
       pendingResume: null,
       resumeHopUsed,
       reopenOnShow: false,
+      linkOnShow: false,
       retryOnShow: false,
       reading: null
     },
@@ -205,6 +209,9 @@ function retry(state) {
 }
 function visibility(state, visible, now) {
   const next = { ...state, visible };
+  if (visible && state.view.status === "ready" && state.linkOnShow) {
+    return openFresh({ ...next, lastLinkReopenAt: now }, "stale", []);
+  }
   if (visible && state.view.status === "ready" && state.reopenOnShow) {
     return openFresh({ ...next, lastAutoReopenAt: now }, "stale", []);
   }
@@ -227,7 +234,7 @@ function fromFrame(state, message, now) {
     return waiting ? becomeReady(state, view.status === "loading") : stay(state);
   }
   if (message.type === "member_linked") {
-    return view.status === "ready" ? openFresh(state, "stale", forgetOwn(state)) : stay(state);
+    return waiting || view.status === "ready" ? memberLinked(state, view.status === "loading", now) : stay(state);
   }
   if (waiting) {
     return endBeforeReady(state, message.type);
@@ -247,6 +254,19 @@ function becomeReady(state, armed) {
     },
     effects: pending === null ? effects : [...effects, { type: "remember_resume", entry: pending }]
   };
+}
+function memberLinked(state, armed, now) {
+  const before = armed ? [{ type: "clear_ready_timeout" }] : [];
+  if (state.view.status === "ready" && !state.visible) {
+    return { state: { ...state, reopenOnShow: false, linkOnShow: true }, effects: forgetOwn(state) };
+  }
+  if (!canAutoReopen(state.lastLinkReopenAt, now)) {
+    return {
+      state: { ...state, view: failed("inbox_expired", "none"), pendingResume: null, reopenOnShow: false, linkOnShow: false, retryOnShow: false },
+      effects: [...before, ...forgetOwn(state), { type: "unmount_iframe" }]
+    };
+  }
+  return openFresh({ ...state, lastLinkReopenAt: now }, "stale", [...before, ...forgetOwn(state)]);
 }
 function endBeforeReady(state, type) {
   if (state.via === "resume" && type === "session_expired") {
@@ -275,7 +295,7 @@ function endAfterReady(state, type, now) {
   }
   const code = type === "session_expired" ? "inbox_expired" : type;
   return {
-    state: { ...state, view: failed(code, "none"), reopenOnShow: false, retryOnShow: false },
+    state: { ...state, view: failed(code, "none"), reopenOnShow: false, linkOnShow: false, retryOnShow: false },
     effects: [...forgetOwn(state), { type: "unmount_iframe" }]
   };
 }

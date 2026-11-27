@@ -8,6 +8,7 @@ export type ConversationMachine = {
     view: MachineView;
     gen: number;
     lastAutoReopenAt: number | null;
+    lastLinkReopenAt: number | null;
 };
 export type ConversationEvent = {
     type: 'start';
