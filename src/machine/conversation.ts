@@ -138,6 +138,10 @@ function fromFrame(state: ConversationMachine, message: EmbedMessage, now: numbe
     return stay(state)
   }
 
+  if (message.type === 'member_linked') {
+    return view.status === 'ready' ? opening(state, 'stale') : stay(state)
+  }
+
   if (framed) {
     return ended(state, message.type, view.status === 'loading' ? [{ type: 'clear_ready_timeout' }] : [])
   }

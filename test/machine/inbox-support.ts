@@ -26,7 +26,7 @@ export function opened(gen: number, url: string = START_A, resumeUrl: string | n
   return { type: 'session_opened', gen, session: { url, origin: ORIGIN, resume_url: resumeUrl, resume_until: resumeUrl === null ? null : UNTIL } }
 }
 
-export function frame(type: 'ready' | 'session_expired' | 'session_revoked' | 'subscription_required' | 'session_replaced'): InboxEvent {
+export function frame(type: 'ready' | 'member_linked' | 'session_expired' | 'session_revoked' | 'subscription_required' | 'session_replaced'): InboxEvent {
   return { type: 'iframe', message: { type } }
 }
 

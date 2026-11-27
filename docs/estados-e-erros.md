@@ -23,7 +23,7 @@ type EmbedState =
 
 `frame` diz o que está no DOM:
 
-- `frame: 'stale'` em `opening`: o iframe velho continua montado enquanto a sessão nova abre (`reopen()` e reabertura automática).
+- `frame: 'stale'` em `opening`: o iframe velho continua montado enquanto a sessão nova abre (`reopen()`, reabertura automática e `member_linked`).
 - `frame: 'loading'` em `error`: é o `ready_timeout` com o iframe vivo; um `ready` atrasado ainda vence.
 
 ## A ação
@@ -63,6 +63,7 @@ A reabertura automática é da lib e nunca depende da `action`. `retryAfter`, qu
 | `origin_not_allowed` | `null` | Este endereço ainda não foi liberado. Avise o suporte. | Backend. |
 | `rejected` | `null` | A abertura foi recusada. Avise o suporte. | Backend. |
 | `customer_without_phone` | `null` | Cadastre um telefone para ver a conversa. | Backend do app, antes de chamar a API. |
+| `attendant_removed` | `null` | Você foi removido do time deste cliente. Peça ao dono para adicionar você de novo. | Backend. Quem atende usava a própria conta do Zapmizer e o cliente tirou essa conta do time ou do número, ou um `user.id` novo veio com o e-mail dela. Veja [O `user`](backend.md#o-user). |
 
 "Backend" quer dizer o `code` que o [endpoint de sessão](backend.md) devolveu, em geral o `error` da API repassado.
 

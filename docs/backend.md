@@ -29,7 +29,8 @@ O `user` define em nome de quem o atendimento sai. Com o `user.id`, o Zapmizer c
 
 - `id` é o identificador da pessoa no app, como texto. Precisa ser estável: outro `id` vira outro atendente.
 - `name` é o nome do atendente.
-- `email` é opcional.
+- `email` é opcional, mas mande o e-mail real e estável de quem atende, nunca um e-mail fixo da integração ou inventado. Se ele for de uma conta do Zapmizer, a caixa de entrada convida a pessoa a usar a própria conta: ela confirma numa janela do Zapmizer, fora do iframe, logada nessa conta. A partir daí, é essa conta que atende nas sessões com o mesmo `user.id`. A caixa e as conversas abertas por essa pessoa terminam com `member_linked`, e a lib abre sessões novas sozinha (veja [Caixa de entrada](caixa-de-entrada.md#quando-a-sessão-acaba)). O mesmo acontece quando a conta é desvinculada: a próxima sessão volta ao atendente criado pelo Zapmizer.
+- Se essa conta sair do time do cliente, perder o acesso ao número ou for apagada, criar a sessão responde `422` com `error: "attendant_removed"`. Depois que o cliente tira a conta do time, um `user.id` novo com o mesmo `user.email` recebe o mesmo `422`. Repasse como `code` (o [ajuste 1](#os-três-ajustes)): a lib mostra o erro `attendant_removed`, sem botão de tentar de novo. Só o dono do time resolve, devolvendo o acesso à pessoa.
 
 Mande sempre a pessoa logada no app, nunca um usuário fixo da integração: com um usuário só, todo o atendimento sairia em nome dele.
 

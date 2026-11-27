@@ -153,6 +153,38 @@ describe('embedded conversation', () => {
     expect(framesIn(container).map((frame) => frame.getAttribute('src'))).toEqual([`${PARLI}/embed-inbox/start/b`])
   })
 
+  it('opens a new session over the old conversation when the person links or unlinks their account', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+
+    expect(sessions.calls()).toBe(2)
+    expect(conversation.state).toEqual({ status: 'opening', frame: 'stale' })
+
+    sessions.resolve(1, session('b'))
+    await settle()
+    postFrom(onlyFrame(container), { type: 'ready' })
+
+    expect(framesIn(container).map((frame) => frame.getAttribute('src'))).toEqual([`${PARLI}/embed-inbox/start/b`])
+    expect(conversation.state).toEqual({ status: 'ready', frame: 'live' })
+  })
+
+  it('still renews by itself when the session expires right after the person linked their account', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+    sessions.resolve(1, session('b'))
+    await settle()
+    postFrom(onlyFrame(container), { type: 'ready' })
+    clock.advance(30_000)
+    postFrom(onlyFrame(container), { type: 'session_expired' })
+
+    expect(sessions.calls()).toBe(3)
+    expect(conversation.state).toEqual({ status: 'opening', frame: 'stale' })
+  })
+
   it('renews by itself at most once a minute, then shows the button', async () => {
     const iframe = await openLoaded()
 
@@ -293,6 +325,7 @@ describe('embedded conversation', () => {
     ['the app session expired', { status: 419, code: null }, { status: 'error', frame: 'none', code: 'app_session_expired', action: 'reload' }],
     ['the address is not allowed', { status: 403, code: 'origin_not_allowed' }, { status: 'error', frame: 'none', code: 'origin_not_allowed', action: null }],
     ['the customer has no phone', { status: 422, code: 'customer_without_phone' }, { status: 'error', frame: 'none', code: 'customer_without_phone', action: null }],
+    ['the owner removed the attendant', { status: 422, code: 'attendant_removed' }, { status: 'error', frame: 'none', code: 'attendant_removed', action: null }],
   ])('shows the error when %s', async (_, refusal, expected) => {
     open()
     sessions.reject(0, refusal)

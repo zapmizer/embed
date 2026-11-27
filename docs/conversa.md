@@ -75,6 +75,7 @@ Só tem efeito em `error`: tira o iframe e abre uma sessão nova. Use no botão 
 
 - `session_expired` com a conversa pronta: a lib abre uma sessão nova sozinha, sobre o iframe velho. Se a última reabertura automática foi há menos de um minuto, mostra o erro `session_expired`, com ação `retry`.
 - `session_expired` antes do `ready`, `session_revoked` e `subscription_required`: erro, e o iframe sai.
+- `member_linked` com a conversa pronta: quem atende passou a usar a própria conta do Zapmizer pela caixa de entrada, ou desvinculou essa conta, e o Zapmizer fechou as conversas abertas por essa pessoa. A lib abre uma sessão nova sozinha, sobre o iframe velho, sem passar por `error`. A sessão nova, com o mesmo `user.id`, já entra com a conta certa. Essa reabertura não conta para a regra do minuto. Antes do `ready`, `member_linked` é ignorado.
 - `session_replaced` não se aplica à conversa e é ignorado.
 
 ## `destroy()`

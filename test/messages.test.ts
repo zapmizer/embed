@@ -20,6 +20,8 @@ describe('embed messages', () => {
     [{ type: 'session_revoked' }, { type: 'session_revoked' }],
     [{ type: 'subscription_required' }, { type: 'subscription_required' }],
     [{ type: 'session_replaced' }, { type: 'session_replaced' }],
+    [{ type: 'member_linked' }, { type: 'member_linked' }],
+    [{ type: 'member_linked', user_id: 9 }, { type: 'member_linked' }],
   ] as const)('accepts %o from the current iframe', (data, expected) => {
     const iframe = appendFrame()
 
@@ -69,7 +71,7 @@ describe('embed messages', () => {
     expect(parseEmbedMessage(messageFrom(iframe.contentWindow, { source: 'parli-embed', type: 'ready' }), { brand: BRAND, origin: PARLI, frame: null })).toBeNull()
   })
 
-  it.each(['session_closed', 'READY', '', undefined])('ignores the unknown type %p', (type) => {
+  it.each(['session_closed', 'READY', 'MEMBER_LINKED', 'member_unlinked', '', undefined])('ignores the unknown type %p', (type) => {
     const iframe = appendFrame()
 
     expect(parseEmbedMessage(messageFrom(iframe.contentWindow, { source: 'parli-embed', type }), expectedFor(iframe))).toBeNull()

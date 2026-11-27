@@ -256,6 +256,10 @@ function fromFrame(state: InboxMachine, message: EmbedMessage, now: number): Inb
     return waiting ? becomeReady(state, view.status === 'loading') : stay(state)
   }
 
+  if (message.type === 'member_linked') {
+    return view.status === 'ready' ? openFresh(state, 'stale', forgetOwn(state)) : stay(state)
+  }
+
   if (waiting) {
     return endBeforeReady(state, message.type)
   }

@@ -20,7 +20,7 @@ function opened(gen: number, url: string = URL_A): ConversationEvent {
   return { type: 'session_opened', gen, session: { url, origin: ORIGIN } }
 }
 
-function frame(type: 'ready' | 'session_expired' | 'session_revoked' | 'subscription_required' | 'session_replaced'): ConversationEvent {
+function frame(type: 'ready' | 'member_linked' | 'session_expired' | 'session_revoked' | 'subscription_required' | 'session_replaced'): ConversationEvent {
   return { type: 'iframe', message: { type } }
 }
 
@@ -142,6 +142,41 @@ describe('conversation machine — table', () => {
 
     expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'session_expired', action: 'retry' })
     expect(result.effects).toEqual([{ type: 'unmount_iframe' }, { type: 'notify' }])
+  })
+
+  it('ready + member_linked → opening(stale), open_session, lastAutoReopenAt untouched', () => {
+    const result = step(ready(), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.lastAutoReopenAt).toBeNull()
+    expect(result.effects).toEqual([{ type: 'open_session', gen: 1 }, { type: 'notify' }])
+  })
+
+  it('member_linked does not count as an automatic reopening: session_expired right after still reopens', () => {
+    const linked = step(ready(), frame('member_linked')).state
+    const readyAgain = [opened(1, URL_B), frame('ready')].reduce((state, event) => step(state, event).state, linked)
+    const result = step(readyAgain, frame('session_expired'), NOW + 1_000)
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.lastAutoReopenAt).toBe(NOW + 1_000)
+  })
+
+  it('member_linked right after an automatic reopening still opens a new session', () => {
+    const readyAgain = step(step(reopening(), opened(1, URL_B)).state, frame('ready')).state
+    const result = step(readyAgain, frame('member_linked'), NOW + 1_000)
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.lastAutoReopenAt).toBe(NOW)
+  })
+
+  it.each([
+    ['opening', opening],
+    ['loading', loading],
+    ['error(loading)', timedOut],
+  ] as const)('%s ignores member_linked', (_, state) => {
+    const before = state()
+
+    expect(step(before, frame('member_linked'))).toEqual({ state: before, effects: [] })
   })
 
   it.each([

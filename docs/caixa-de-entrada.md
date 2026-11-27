@@ -50,6 +50,7 @@ Abrir uma caixa do zero é pesado. Quando o backend devolve `resume_url` e `resu
 - Uma entrada que vence em menos de dois minutos, ou cuja `url` não é da `origin` guardada, é ignorada.
 - Se a caixa retomada responde `session_expired` antes de ficar pronta, a lib esquece a entrada e pede uma sessão nova, uma vez.
 - Se a caixa retomada não fica pronta no prazo, a entrada é esquecida.
+- Com `member_linked`, a entrada é esquecida: a sessão dela terminou (veja [Quando a sessão acaba](#quando-a-sessão-acaba)).
 - `destroy()` mantém a entrada. O [logout](logout-e-multiaba.md) apaga todas.
 - Por padrão a retomada usa o `sessionStorage`, que é de cada aba. Para dividir entre abas, passe `storage: window.localStorage`. Veja [multi-aba](logout-e-multiaba.md#a-caixa-em-várias-abas).
 - Um `storage` que lança (navegador bloqueando o armazenamento) é tratado como vazio.
@@ -78,6 +79,9 @@ const keepAlive: KeepAlive = async () => {
 - `session_expired` antes do `ready`: erro `session_expired`.
 - `session_revoked` e `subscription_required`: erro, e o iframe sai.
 - `session_replaced`: outra aba deste navegador abriu a caixa. Veja [multi-aba](logout-e-multiaba.md#a-caixa-em-várias-abas).
+- `member_linked` com a caixa pronta: quem atende confirmou que vai usar a própria conta do Zapmizer, ou essa conta foi desvinculada (veja [O `user`](backend.md#o-user)). A sessão terminou do lado do Zapmizer. A lib esquece a retomada, chama `openSession` de novo e troca o iframe quando a sessão nova chega, sem passar por `error`, mesmo com a caixa oculta. O backend manda o mesmo `user.id`, e a sessão nova já entra com a conta certa da pessoa. Essa reabertura não conta para a regra do minuto do `session_expired`. Antes do `ready`, `member_linked` é ignorado.
+
+A confirmação abre numa janela do Zapmizer, por `window.open`. O `sandbox` que a lib põe no iframe já libera `allow-popups`; se você trocar o `sandbox` em `configure`, mantenha `allow-popups` e `allow-popups-to-escape-sandbox`.
 
 ## `setVisible`
 

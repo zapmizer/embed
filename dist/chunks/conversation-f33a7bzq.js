@@ -2,7 +2,7 @@ import {
   actionFor2,
   codeForRefusal2,
   toRefusal2
-} from "./conversation-8vvt7dm7.js";
+} from "./conversation-aaj2s2qd.js";
 import {
   resumeKey2,
   defaultResumeStorage2,
@@ -16,7 +16,7 @@ import {
   failed,
   exposed,
   canAutoReopen
-} from "./conversation-zyx12f77.js";
+} from "./conversation-7yykfv7d.js";
 import {
   INBOX_FRAME,
   defaultClock,
@@ -25,7 +25,7 @@ import {
   requestSession,
   createFrameSlot,
   registerEmbed
-} from "./conversation-zmxh8xgq.js";
+} from "./conversation-ss1ark8m.js";
 
 // src/machine/inbox.ts
 var RESUME_EFFECTS = new Set(["read_resume", "remember_resume", "forget_resume_if", "forget_other_resumes", "forget_all_resumes"]);
@@ -225,6 +225,9 @@ function fromFrame(state, message, now) {
   }
   if (message.type === "ready") {
     return waiting ? becomeReady(state, view.status === "loading") : stay(state);
+  }
+  if (message.type === "member_linked") {
+    return view.status === "ready" ? openFresh(state, "stale", forgetOwn(state)) : stay(state);
   }
   if (waiting) {
     return endBeforeReady(state, message.type);

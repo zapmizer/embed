@@ -242,6 +242,69 @@ describe('inbox machine — table', () => {
     expect(result.effects).toEqual([{ type: 'forget_resume_if', url: RESUME_A }, { type: 'unmount_iframe' }, { type: 'notify' }])
   })
 
+  it('ready + member_linked → opening(stale, fresh), forget own entry, open_session, lastAutoReopenAt untouched', () => {
+    const result = step(freshReady(), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.via).toBe('fresh')
+    expect(result.state.ownResumeUrl).toBeNull()
+    expect(result.state.lastAutoReopenAt).toBeNull()
+    expect(result.effects).toEqual([{ type: 'forget_resume_if', url: RESUME_A }, { type: 'open_session', gen: 1 }, { type: 'notify' }])
+  })
+
+  it('ready via resume + member_linked → forgets the remembered entry and opens a fresh session', () => {
+    const result = step(resumeReady(), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.via).toBe('fresh')
+    expect(result.effects).toEqual([{ type: 'forget_resume_if', url: STORED.url }, { type: 'open_session', gen: 1 }, { type: 'notify' }])
+  })
+
+  it('ready, hidden + member_linked → opens the new session right away', () => {
+    const result = step(freshReady(false), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.reopenOnShow).toBe(false)
+    expect(result.effects).toEqual([{ type: 'forget_resume_if', url: RESUME_A }, { type: 'open_session', gen: 1 }, { type: 'notify' }])
+  })
+
+  it('ready + member_linked → the new session swaps the stale iframe and remembers its own way back', () => {
+    const linked = step(freshReady(), frame('member_linked')).state
+    const swapped = step(linked, opened(1, START_B, `${ORIGIN}/chats?embed_inbox=b`))
+
+    expect(swapped.state.view).toEqual({ status: 'loading', frame: 'loading' })
+    expect(swapped.effects).toEqual([{ type: 'unmount_iframe' }, { type: 'mount_iframe', url: START_B, origin: ORIGIN }, { type: 'arm_ready_timeout', gen: 2 }, { type: 'notify' }])
+    expect(step(swapped.state, frame('ready')).effects).toContainEqual({ type: 'remember_resume', entry: { url: `${ORIGIN}/chats?embed_inbox=b`, origin: ORIGIN, until: UNTIL } })
+  })
+
+  it('member_linked does not count as an automatic reopening: session_expired right after still reopens', () => {
+    const linked = step(freshReady(), frame('member_linked')).state
+    const readyAgain = [opened(1, START_B, null), frame('ready')].reduce((state, event) => step(state, event).state, linked)
+    const result = step(readyAgain, frame('session_expired'), NOW + 1_000)
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.lastAutoReopenAt).toBe(NOW + 1_000)
+  })
+
+  it('member_linked right after an automatic reopening still opens a new session', () => {
+    const reopened = step(freshReady(), frame('session_expired')).state
+    const readyAgain = [opened(1, START_B, null), frame('ready')].reduce((state, event) => step(state, event).state, reopened)
+    const result = step(readyAgain, frame('member_linked'), NOW + 1_000)
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.lastAutoReopenAt).toBe(NOW)
+  })
+
+  it.each([
+    ['opening', () => freshOpening()],
+    ['loading', () => freshLoading()],
+    ['error(loading)', () => freshTimedOut()],
+  ] as const)('%s ignores member_linked', (_, state) => {
+    const before = state()
+
+    expect(step(before, frame('member_linked'))).toEqual({ state: before, effects: [] })
+  })
+
   it('visible{true} with reopenOnShow → opening(stale, fresh), open_session, lastAutoReopenAt = now', () => {
     const expired = step(freshReady(false), frame('session_expired')).state
     const result = step(expired, SHOW, NOW + 5_000)

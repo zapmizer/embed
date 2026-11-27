@@ -1,11 +1,11 @@
 import {
   codeForRefusal2
-} from "./conversation-8vvt7dm7.js";
+} from "./conversation-aaj2s2qd.js";
 import {
   failed,
   exposed,
   canAutoReopen
-} from "./conversation-zyx12f77.js";
+} from "./conversation-7yykfv7d.js";
 import {
   CONVERSATION_FRAME,
   defaultClock,
@@ -14,7 +14,7 @@ import {
   requestSession,
   createFrameSlot,
   registerEmbed
-} from "./conversation-zmxh8xgq.js";
+} from "./conversation-ss1ark8m.js";
 
 // src/machine/conversation.ts
 function initialState() {
@@ -120,6 +120,9 @@ function fromFrame(state, message, now) {
   }
   if (message.type === "session_replaced") {
     return stay(state);
+  }
+  if (message.type === "member_linked") {
+    return view.status === "ready" ? opening(state, "stale") : stay(state);
   }
   if (framed) {
     return ended(state, message.type, view.status === "loading" ? [{ type: "clear_ready_timeout" }] : []);

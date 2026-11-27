@@ -33,6 +33,10 @@ function toMessage(data: Record<string, unknown>): EmbedMessage | null {
     return typeof id === 'string' || (typeof id === 'number' && Number.isFinite(id)) ? { type: 'message_sent', message_id: id } : null
   }
 
+  if (type === 'member_linked') {
+    return { type: 'member_linked' }
+  }
+
   if (type === 'session_expired' || type === 'session_revoked' || type === 'subscription_required' || type === 'session_replaced') {
     return { type }
   }
@@ -50,6 +54,7 @@ export type EmbedMessage =
   | { type: 'ready' }
   | { type: 'resize'; height: number }
   | { type: 'message_sent'; message_id: string | number }
+  | { type: 'member_linked' }
   | { type: EmbedEndType }
 
 type ExpectedSender = { brand: string; origin: string; frame: Window | null }
