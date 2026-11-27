@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { initialState } from '../../src/machine/inbox'
-import type { InboxEvent } from '../../src/machine/inbox'
+import type { InboxEvent, InboxMachine } from '../../src/machine/inbox'
 import {
   HIDE,
   NOTHING_STORED,
@@ -27,6 +27,12 @@ import {
   step,
   through,
 } from './inbox-support'
+
+function linkCycle(state: InboxMachine, at: number, resumeUrl: string | null = null): InboxMachine {
+  const linked = step(state, frame('member_linked'), at).state
+
+  return [opened(linked.gen, START_B, resumeUrl), frame('ready')].reduce((next, event) => step(next, event, at).state, linked)
+}
 
 describe('inbox machine — table', () => {
   it('idle + start → idle, forget_other_resumes, read_resume', () => {
@@ -276,7 +282,7 @@ describe('inbox machine — table', () => {
     expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
     expect(result.state.linkOnShow).toBe(false)
     expect(result.state.lastAutoReopenAt).toBeNull()
-    expect(result.state.lastLinkReopenAt).toBe(NOW + 5_000)
+    expect(result.state.linkReopens).toEqual([NOW + 5_000])
     expect(result.effects).toEqual([{ type: 'open_session', gen: 1 }, { type: 'notify' }])
   })
 
@@ -333,29 +339,50 @@ describe('inbox machine — table', () => {
     expect(result.effects).toEqual([{ type: 'open_session', gen: 1 }, { type: 'notify' }])
   })
 
-  it('member_linked < 60 s after a member_linked reopening → error(inbox_expired, none), forget own entry, unmount_iframe', () => {
-    const linked = step(freshReady(), frame('member_linked')).state
-    const readyAgain = [opened(1, START_B, `${ORIGIN}/chats?embed_inbox=b`), frame('ready')].reduce((state, event) => step(state, event).state, linked)
-    const result = step(readyAgain, frame('member_linked'), NOW + 59_999)
+  it('link then unlink 20 s later → both reopen, without an error', () => {
+    const afterLink = linkCycle(freshReady(), NOW)
+    const result = step(afterLink, frame('member_linked'), NOW + 20_000)
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.linkReopens).toEqual([NOW, NOW + 20_000])
+  })
+
+  it('a third member_linked < 60 s after the first of two reopenings → error(inbox_expired, none), forget own entry, unmount_iframe', () => {
+    const twice = linkCycle(linkCycle(freshReady(), NOW), NOW + 20_000, `${ORIGIN}/chats?embed_inbox=b`)
+    const result = step(twice, frame('member_linked'), NOW + 59_999)
 
     expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'inbox_expired', action: 'retry' })
     expect(result.effects).toEqual([{ type: 'forget_resume_if', url: `${ORIGIN}/chats?embed_inbox=b` }, { type: 'unmount_iframe' }, { type: 'notify' }])
   })
 
-  it('member_linked < 60 s after a member_linked reopening, before ready → error(inbox_expired, none), clear_ready_timeout', () => {
-    const linked = step(freshReady(), frame('member_linked')).state
-    const loadingAgain = step(linked, opened(1, START_B, null)).state
-    const result = step(loadingAgain, frame('member_linked'), NOW + 1_000)
+  it('a third member_linked < 60 s, before ready → error(inbox_expired, none), clear_ready_timeout', () => {
+    const twice = linkCycle(freshReady(), NOW)
+    const linkedAgain = step(twice, frame('member_linked'), NOW + 1_000).state
+    const loadingAgain = step(linkedAgain, opened(linkedAgain.gen, START_B, null)).state
+    const result = step(loadingAgain, frame('member_linked'), NOW + 2_000)
 
     expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'inbox_expired', action: 'retry' })
     expect(result.effects).toEqual([{ type: 'clear_ready_timeout' }, { type: 'unmount_iframe' }, { type: 'notify' }])
   })
 
-  it('member_linked ≥ 60 s after a member_linked reopening → reopens again', () => {
-    const linked = step(freshReady(), frame('member_linked')).state
-    const readyAgain = [opened(1, START_B, null), frame('ready')].reduce((state, event) => step(state, event).state, linked)
+  it('the window slides: a reopening older than 60 s stops counting', () => {
+    const twice = linkCycle(linkCycle(freshReady(), NOW), NOW + 20_000)
+    const third = step(twice, frame('member_linked'), NOW + 60_000)
 
-    expect(step(readyAgain, frame('member_linked'), NOW + 60_000).state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(third.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(third.state.linkReopens).toEqual([NOW + 20_000, NOW + 60_000])
+
+    const thrice = [opened(third.state.gen, START_B, null), frame('ready')].reduce((state, event) => step(state, event).state, third.state)
+
+    expect(step(thrice, frame('member_linked'), NOW + 70_000).state.view).toEqual({ status: 'error', frame: 'none', code: 'inbox_expired', action: 'retry' })
+  })
+
+  it('the reopening on show counts toward the window', () => {
+    const shown = step(step(freshReady(false), frame('member_linked')).state, SHOW, NOW + 5_000).state
+    const readyAgain = [opened(shown.gen, START_B, null), frame('ready')].reduce((state, event) => step(state, event).state, shown)
+    const twice = linkCycle(readyAgain, NOW + 10_000)
+
+    expect(step(twice, frame('member_linked'), NOW + 15_000).state.view).toEqual({ status: 'error', frame: 'none', code: 'inbox_expired', action: 'retry' })
   })
 
   it('member_linked + refusal → error with the action of the code and the stale iframe unmounted', () => {

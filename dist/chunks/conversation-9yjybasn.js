@@ -13,10 +13,12 @@ import {
   forgetAllResumes2
 } from "./conversation-6md6txsp.js";
 import {
+  LINK_REOPENS_PER_GAP,
   failed,
   exposed,
-  canAutoReopen
-} from "./conversation-29rv844y.js";
+  canAutoReopen,
+  recentReopens
+} from "./conversation-wy5dexxb.js";
 import {
   INBOX_FRAME,
   defaultClock,
@@ -38,7 +40,7 @@ function initialState(options) {
     ownResumeUrl: null,
     pendingResume: null,
     lastAutoReopenAt: null,
-    lastLinkReopenAt: null,
+    linkReopens: [],
     visible: options.visible,
     reopenOnShow: false,
     linkOnShow: false,
@@ -210,7 +212,7 @@ function retry(state) {
 function visibility(state, visible, now) {
   const next = { ...state, visible };
   if (visible && state.view.status === "ready" && state.linkOnShow) {
-    return openFresh({ ...next, lastLinkReopenAt: now }, "stale", []);
+    return openFresh({ ...next, linkReopens: [...recentReopens(state.linkReopens, now), now] }, "stale", []);
   }
   if (visible && state.view.status === "ready" && state.reopenOnShow) {
     return openFresh({ ...next, lastAutoReopenAt: now }, "stale", []);
@@ -260,13 +262,14 @@ function memberLinked(state, armed, now) {
   if (state.view.status === "ready" && !state.visible) {
     return { state: { ...state, reopenOnShow: false, linkOnShow: true }, effects: forgetOwn(state) };
   }
-  if (!canAutoReopen(state.lastLinkReopenAt, now)) {
+  const recent = recentReopens(state.linkReopens, now);
+  if (recent.length >= LINK_REOPENS_PER_GAP) {
     return {
       state: { ...state, view: failed("inbox_expired", "none"), pendingResume: null, reopenOnShow: false, linkOnShow: false, retryOnShow: false },
       effects: [...before, ...forgetOwn(state), { type: "unmount_iframe" }]
     };
   }
-  return openFresh({ ...state, lastLinkReopenAt: now }, "stale", [...before, ...forgetOwn(state)]);
+  return openFresh({ ...state, linkReopens: [...recent, now] }, "stale", [...before, ...forgetOwn(state)]);
 }
 function endBeforeReady(state, type) {
   if (state.via === "resume" && type === "session_expired") {

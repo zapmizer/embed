@@ -1,10 +1,10 @@
 import { codeForRefusal } from '../errors.js'
 import type { EmbedEndType, EmbedMessage } from '../messages.js'
 import type { MachineView, SessionOpened, SessionRefused } from '../state.js'
-import { canAutoReopen, failed } from './view.js'
+import { LINK_REOPENS_PER_GAP, canAutoReopen, failed, recentReopens } from './view.js'
 
 export function initialState(): ConversationMachine {
-  return { view: { status: 'idle', frame: 'none' }, gen: 0, lastAutoReopenAt: null, lastLinkReopenAt: null }
+  return { view: { status: 'idle', frame: 'none' }, gen: 0, lastAutoReopenAt: null, linkReopens: [] }
 }
 
 export function transition(state: ConversationMachine, event: ConversationEvent, ctx: { now: number }): ConversationStep {
@@ -145,7 +145,9 @@ function fromFrame(state: ConversationMachine, message: EmbedMessage, now: numbe
       return stay(state)
     }
 
-    return canAutoReopen(state.lastLinkReopenAt, now) ? opening({ ...state, lastLinkReopenAt: now }, 'stale', armed) : ended(state, 'session_expired', armed)
+    const recent = recentReopens(state.linkReopens, now)
+
+    return recent.length < LINK_REOPENS_PER_GAP ? opening({ ...state, linkReopens: [...recent, now] }, 'stale', armed) : ended(state, 'session_expired', armed)
   }
 
   if (framed) {
@@ -171,7 +173,7 @@ function stay(state: ConversationMachine): ConversationStep {
   return { state, effects: [] }
 }
 
-export type ConversationMachine = { view: MachineView; gen: number; lastAutoReopenAt: number | null; lastLinkReopenAt: number | null }
+export type ConversationMachine = { view: MachineView; gen: number; lastAutoReopenAt: number | null; linkReopens: number[] }
 
 export type ConversationEvent =
   | { type: 'start' }

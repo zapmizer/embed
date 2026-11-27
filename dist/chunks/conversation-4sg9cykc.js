@@ -2,10 +2,12 @@ import {
   codeForRefusal2
 } from "./conversation-vfvm9epf.js";
 import {
+  LINK_REOPENS_PER_GAP,
   failed,
   exposed,
-  canAutoReopen
-} from "./conversation-29rv844y.js";
+  canAutoReopen,
+  recentReopens
+} from "./conversation-wy5dexxb.js";
 import {
   CONVERSATION_FRAME,
   defaultClock,
@@ -18,7 +20,7 @@ import {
 
 // src/machine/conversation.ts
 function initialState() {
-  return { view: { status: "idle", frame: "none" }, gen: 0, lastAutoReopenAt: null, lastLinkReopenAt: null };
+  return { view: { status: "idle", frame: "none" }, gen: 0, lastAutoReopenAt: null, linkReopens: [] };
 }
 function transition(state, event, ctx) {
   const step = decide(state, event, ctx.now);
@@ -126,7 +128,8 @@ function fromFrame(state, message, now) {
     if (!framed && view.status !== "ready") {
       return stay(state);
     }
-    return canAutoReopen(state.lastLinkReopenAt, now) ? opening({ ...state, lastLinkReopenAt: now }, "stale", armed) : ended(state, "session_expired", armed);
+    const recent = recentReopens(state.linkReopens, now);
+    return recent.length < LINK_REOPENS_PER_GAP ? opening({ ...state, linkReopens: [...recent, now] }, "stale", armed) : ended(state, "session_expired", armed);
   }
   if (framed) {
     return ended(state, message.type, armed);

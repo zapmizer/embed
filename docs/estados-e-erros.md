@@ -46,8 +46,8 @@ A reabertura automática é da lib e nunca depende da `action`. `retryAfter`, qu
 
 | `code` | `action` | Texto padrão | De onde vem |
 | --- | --- | --- | --- |
-| `session_expired` | `retry` | A sessão expirou antes de abrir. Tente de novo. | Iframe, antes do `ready`; ou conversa expirando, ou recebendo `member_linked`, de novo em menos de um minuto. |
-| `inbox_expired` | `retry` | A caixa de entrada expirou. Tente de novo. | Caixa pronta expirando de novo em menos de um minuto, ou `member_linked` de novo em menos de um minuto. |
+| `session_expired` | `retry` | A sessão expirou antes de abrir. Tente de novo. | Iframe, antes do `ready`; conversa expirando de novo em menos de um minuto; ou conversa recebendo o terceiro `member_linked` em 60 s. |
+| `inbox_expired` | `retry` | A caixa de entrada expirou. Tente de novo. | Caixa pronta expirando de novo em menos de um minuto, ou recebendo o terceiro `member_linked` em 60 s. |
 | `session_revoked` | `retry` | O acesso foi encerrado. Abra de novo; se não abrir, reconecte o WhatsApp. | Iframe. |
 | `session_replaced` | `retry` | A caixa de entrada foi aberta em outra aba deste navegador. | Iframe, só na caixa. Veja [multi-aba](logout-e-multiaba.md#a-caixa-em-várias-abas). |
 | `subscription_required` | `checkout` | A assinatura está inativa. Assine para atender por aqui. | Iframe, ou `code` do backend. |

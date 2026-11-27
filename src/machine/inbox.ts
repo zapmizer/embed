@@ -2,7 +2,7 @@ import { actionFor, codeForRefusal } from '../errors.js'
 import type { EmbedEndType, EmbedMessage } from '../messages.js'
 import type { ResumeEntry } from '../resume.js'
 import type { EmbedErrorCode, MachineView, SessionOpened, SessionRefused } from '../state.js'
-import { canAutoReopen, failed } from './view.js'
+import { LINK_REOPENS_PER_GAP, canAutoReopen, failed, recentReopens } from './view.js'
 
 const RESUME_EFFECTS: ReadonlySet<string> = new Set(['read_resume', 'remember_resume', 'forget_resume_if', 'forget_other_resumes', 'forget_all_resumes'])
 
@@ -15,7 +15,7 @@ export function initialState(options: { resumable: boolean; visible: boolean }):
     ownResumeUrl: null,
     pendingResume: null,
     lastAutoReopenAt: null,
-    lastLinkReopenAt: null,
+    linkReopens: [],
     visible: options.visible,
     reopenOnShow: false,
     linkOnShow: false,
@@ -232,7 +232,7 @@ function visibility(state: InboxMachine, visible: boolean, now: number): InboxSt
   const next = { ...state, visible }
 
   if (visible && state.view.status === 'ready' && state.linkOnShow) {
-    return openFresh({ ...next, lastLinkReopenAt: now }, 'stale', [])
+    return openFresh({ ...next, linkReopens: [...recentReopens(state.linkReopens, now), now] }, 'stale', [])
   }
 
   if (visible && state.view.status === 'ready' && state.reopenOnShow) {
@@ -298,14 +298,16 @@ function memberLinked(state: InboxMachine, armed: boolean, now: number): InboxSt
     return { state: { ...state, reopenOnShow: false, linkOnShow: true }, effects: forgetOwn(state) }
   }
 
-  if (!canAutoReopen(state.lastLinkReopenAt, now)) {
+  const recent = recentReopens(state.linkReopens, now)
+
+  if (recent.length >= LINK_REOPENS_PER_GAP) {
     return {
       state: { ...state, view: failed('inbox_expired', 'none'), pendingResume: null, reopenOnShow: false, linkOnShow: false, retryOnShow: false },
       effects: [...before, ...forgetOwn(state), { type: 'unmount_iframe' }],
     }
   }
 
-  return openFresh({ ...state, lastLinkReopenAt: now }, 'stale', [...before, ...forgetOwn(state)])
+  return openFresh({ ...state, linkReopens: [...recent, now] }, 'stale', [...before, ...forgetOwn(state)])
 }
 
 function endBeforeReady(state: InboxMachine, type: EmbedEndType): InboxStep {
@@ -363,7 +365,7 @@ export type InboxMachine = {
   ownResumeUrl: string | null
   pendingResume: ResumeEntry | null
   lastAutoReopenAt: number | null
-  lastLinkReopenAt: number | null
+  linkReopens: number[]
   visible: boolean
   reopenOnShow: boolean
   linkOnShow: boolean

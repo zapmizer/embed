@@ -88,7 +88,7 @@ A lib esquece a retomada, chama `openSession` de novo e troca o iframe quando a 
 - Vale com a caixa pronta e também antes do `ready`. Um `ready` atrasado do iframe velho é ignorado.
 - Com a caixa oculta e pronta, a sessão nova só é pedida quando ela volta a aparecer, como no `session_expired`.
 - Essa reabertura não conta para a regra do minuto do `session_expired`, e vice-versa.
-- Ela tem a sua própria regra do minuto: um `member_linked` em menos de um minuto depois da última reabertura por `member_linked` mostra o erro `inbox_expired`, com ação `retry`, em vez de reabrir em laço.
+- Ela tem a sua própria trava: a lib reabre por `member_linked` até duas vezes em 60 s, o que cobre vincular e logo depois desvincular. Um terceiro `member_linked` dentro desses 60 s mostra o erro `inbox_expired`, com ação `retry`, em vez de reabrir em laço.
 - Se a sessão nova for recusada (por exemplo `attendant_removed`), o iframe velho sai e o erro da recusa aparece.
 - Com `storage: window.localStorage`, duas abas podem estar na mesma caixa. As duas reabrem, e a que abrir primeiro recebe `session_replaced` (veja [multi-aba](logout-e-multiaba.md#a-caixa-em-várias-abas)).
 

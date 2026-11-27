@@ -179,7 +179,7 @@ describe('embedded conversation', () => {
     expect(conversation.state).toEqual({ status: 'opening', frame: 'stale' })
   })
 
-  it('shows the button instead of looping when member_linked comes again within a minute', async () => {
+  it('reopens again without an error when the account is unlinked 20 s after being linked', async () => {
     const iframe = await openLoaded()
 
     postFrom(iframe, { type: 'ready' })
@@ -187,9 +187,29 @@ describe('embedded conversation', () => {
     sessions.resolve(1, session('b'))
     await settle()
     postFrom(onlyFrame(container), { type: 'ready' })
+    clock.advance(20_000)
     postFrom(onlyFrame(container), { type: 'member_linked' })
 
-    expect(sessions.calls()).toBe(2)
+    expect(sessions.calls()).toBe(3)
+    expect(conversation.state).toEqual({ status: 'opening', frame: 'stale' })
+    expect(states.map((state) => state.status)).not.toContain('error')
+  })
+
+  it('shows the button instead of looping when member_linked comes a third time within a minute', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+
+    for (const [index, id] of ['b', 'c'].entries()) {
+      postFrom(onlyFrame(container), { type: 'member_linked' })
+      sessions.resolve(index + 1, session(id))
+      await settle()
+      postFrom(onlyFrame(container), { type: 'ready' })
+    }
+
+    postFrom(onlyFrame(container), { type: 'member_linked' })
+
+    expect(sessions.calls()).toBe(3)
     expect(conversation.state).toEqual({ status: 'error', frame: 'none', code: 'session_expired', action: 'retry' })
   })
 
