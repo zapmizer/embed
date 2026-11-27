@@ -151,6 +151,108 @@ describe('embedded inbox', () => {
     expect(sessions.calls()).toBe(3)
   })
 
+  it('opens a new session over the old inbox when the person links their own account, without an error', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+
+    expect(sessions.calls()).toBe(2)
+    expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
+    expect(storedResume()).toBeNull()
+
+    sessions.resolve(1, session('b', true))
+    await settle()
+    postFrom(onlyFrame(container), { type: 'ready' })
+
+    expect(framesIn(container).map((frame) => frame.getAttribute('src'))).toEqual([`${PARLI}/embed-inbox/start/b`])
+    expect(inbox.state).toEqual({ status: 'ready', frame: 'live' })
+    expect(storedResume()).toEqual({ url: `${PARLI}/chats?embed_inbox=b`, origin: PARLI, until: '2026-10-07T14:00:00+00:00' })
+    expect(states.map((state) => state.status)).not.toContain('error')
+  })
+
+  it('still renews by itself when the session expires right after the person linked their account', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+    sessions.resolve(1, session('b'))
+    await settle()
+    postFrom(onlyFrame(container), { type: 'ready' })
+    clock.advance(30_000)
+    postFrom(onlyFrame(container), { type: 'session_expired' })
+
+    expect(sessions.calls()).toBe(3)
+    expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
+  })
+
+  it('opens a new session when the account changes before the inbox loads, and ignores the late ready', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'member_linked' })
+    expect(sessions.calls()).toBe(2)
+    postFrom(iframe, { type: 'ready' })
+    clock.advance(45_000)
+
+    expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
+    expect(storedResume()).toBeNull()
+  })
+
+  it('reopens again without an error when the account is unlinked 20 s after being linked', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+    sessions.resolve(1, session('b'))
+    await settle()
+    postFrom(onlyFrame(container), { type: 'ready' })
+    clock.advance(20_000)
+    postFrom(onlyFrame(container), { type: 'member_linked' })
+
+    expect(sessions.calls()).toBe(3)
+    expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
+    expect(states.map((state) => state.status)).not.toContain('error')
+  })
+
+  it('shows the button instead of looping when member_linked comes a third time within a minute', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+
+    for (const [index, id] of ['b', 'c'].entries()) {
+      postFrom(onlyFrame(container), { type: 'member_linked' })
+      sessions.resolve(index + 1, session(id))
+      await settle()
+      postFrom(onlyFrame(container), { type: 'ready' })
+    }
+
+    postFrom(onlyFrame(container), { type: 'member_linked' })
+
+    expect(sessions.calls()).toBe(3)
+    expect(inbox.state).toEqual({ status: 'error', frame: 'none', code: 'inbox_expired', action: 'retry' })
+    expect(framesIn(container)).toHaveLength(0)
+  })
+
+  it('shows the removal and drops the old inbox when the new session after member_linked is refused', async () => {
+    const iframe = await openLoaded()
+
+    postFrom(iframe, { type: 'ready' })
+    postFrom(iframe, { type: 'member_linked' })
+    sessions.reject(1, { status: 422, code: 'attendant_removed' })
+    await settle()
+
+    expect(inbox.state).toEqual({ status: 'error', frame: 'none', code: 'attendant_removed', action: null })
+    expect(framesIn(container)).toHaveLength(0)
+  })
+
+  it('shows the removal without a retry when the owner removed the attendant', async () => {
+    open()
+    sessions.reject(0, { status: 422, code: 'attendant_removed' })
+    await settle()
+
+    expect(inbox.state).toEqual({ status: 'error', frame: 'none', code: 'attendant_removed', action: null })
+  })
+
   it('never reopens by itself when another tab took the inbox', async () => {
     const iframe = await openLoaded()
 
@@ -419,6 +521,18 @@ describe('embedded inbox', () => {
       expect(sessions.calls()).toBe(1)
     })
 
+    it('forgets the remembered inbox and asks for a new session when the person links their own account', () => {
+      rememberResume()
+      open()
+
+      postFrom(onlyFrame(container), { type: 'ready' })
+      postFrom(onlyFrame(container), { type: 'member_linked' })
+
+      expect(storedResume()).toBeNull()
+      expect(sessions.calls()).toBe(1)
+      expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
+    })
+
     it('shows the deadline error without a new session and forgets the remembered inbox that does not load', () => {
       rememberResume()
       open()
@@ -538,6 +652,20 @@ describe('embedded inbox', () => {
 
       expect(sessions.calls()).toBe(1)
       expect(inbox.state).toEqual({ status: 'ready', frame: 'live' })
+    })
+
+    it('waits to be shown to open the new session when the person links their account while hidden', async () => {
+      const iframe = await openLoaded()
+
+      postFrom(iframe, { type: 'ready' })
+      inbox.setVisible(false)
+      postFrom(iframe, { type: 'member_linked' })
+      expect(sessions.calls()).toBe(1)
+      expect(storedResume()).toBeNull()
+      inbox.setVisible(true)
+
+      expect(sessions.calls()).toBe(2)
+      expect(inbox.state).toEqual({ status: 'opening', frame: 'stale' })
     })
 
     it('does not take the inbox back by itself when another tab took it while hidden (S20)', async () => {

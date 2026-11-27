@@ -9,6 +9,8 @@ export type EmbedMessage = {
     type: 'message_sent';
     message_id: string | number;
 } | {
+    type: 'member_linked';
+} | {
     type: EmbedEndType;
 };
 type ExpectedSender = {

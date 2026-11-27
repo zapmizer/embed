@@ -20,6 +20,7 @@ export type EmbedErrorCode =
   | 'origin_not_allowed'
   | 'rejected'
   | 'customer_without_phone'
+  | 'attendant_removed'
   | (string & {})
 
 export type EmbedState =

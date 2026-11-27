@@ -86,8 +86,9 @@ fromIframe(container, { type: 'session_expired' })
 | `session_revoked` | | Erro `session_revoked`. |
 | `subscription_required` | | Erro `subscription_required`. |
 | `session_replaced` | | Erro `session_replaced` na caixa. A conversa ignora. |
+| `member_linked` | | Sessão nova sem erro, com o iframe pronto ou carregando; na caixa oculta, quando ela volta a aparecer. Veja [Conversa](conversa.md#quando-a-sessão-acaba) e [Caixa](caixa-de-entrada.md#quando-a-sessão-acaba). |
 
-Mensagem de outro `source`, de outra origem ou de outro iframe é ignorada.
+Mensagem de outro `source`, de outra origem ou de outro iframe é ignorada, assim como um `type` fora desta tabela.
 
 ## O relógio
 

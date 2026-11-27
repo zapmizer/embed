@@ -1,11 +1,11 @@
-import"./chunks/conversation-8vvt7dm7.js";
+import"./chunks/conversation-vfvm9epf.js";
 import {
   defaultResumeStorage2,
   forgetAllResumes2
 } from "./chunks/conversation-6md6txsp.js";
 import {
   endRegisteredEmbeds
-} from "./chunks/conversation-zmxh8xgq.js";
+} from "./chunks/conversation-qxh51kse.js";
 
 // src/logout.ts
 function endEmbeds(options) {

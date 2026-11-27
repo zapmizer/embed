@@ -1,6 +1,6 @@
 import {
   toRefusal2
-} from "./conversation-8vvt7dm7.js";
+} from "./conversation-vfvm9epf.js";
 import {
   webOriginOf2
 } from "./conversation-6md6txsp.js";
@@ -30,6 +30,9 @@ function toMessage(data) {
   if (type === "message_sent") {
     const id = data.message_id;
     return typeof id === "string" || typeof id === "number" && Number.isFinite(id) ? { type: "message_sent", message_id: id } : null;
+  }
+  if (type === "member_linked") {
+    return { type: "member_linked" };
   }
   if (type === "session_expired" || type === "session_revoked" || type === "subscription_required" || type === "session_replaced") {
     return { type };

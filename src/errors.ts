@@ -22,6 +22,7 @@ export const defaultMessages: Record<string, string> = {
   origin_not_allowed: 'Este endereço ainda não foi liberado. Avise o suporte.',
   rejected: 'A abertura foi recusada. Avise o suporte.',
   customer_without_phone: 'Cadastre um telefone para ver a conversa.',
+  attendant_removed: 'Você não tem mais acesso a este atendimento. Peça ao dono do time para liberar seu acesso de novo.',
 }
 
 export function actionFor(code: EmbedErrorCode): EmbedAction {

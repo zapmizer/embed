@@ -1,11 +1,13 @@
 import {
   codeForRefusal2
-} from "./conversation-8vvt7dm7.js";
+} from "./conversation-vfvm9epf.js";
 import {
+  LINK_REOPENS_PER_GAP,
   failed,
   exposed,
-  canAutoReopen
-} from "./conversation-zyx12f77.js";
+  canAutoReopen,
+  recentReopens
+} from "./conversation-wy5dexxb.js";
 import {
   CONVERSATION_FRAME,
   defaultClock,
@@ -14,11 +16,11 @@ import {
   requestSession,
   createFrameSlot,
   registerEmbed
-} from "./conversation-zmxh8xgq.js";
+} from "./conversation-qxh51kse.js";
 
 // src/machine/conversation.ts
 function initialState() {
-  return { view: { status: "idle", frame: "none" }, gen: 0, lastAutoReopenAt: null };
+  return { view: { status: "idle", frame: "none" }, gen: 0, lastAutoReopenAt: null, linkReopens: [] };
 }
 function transition(state, event, ctx) {
   const step = decide(state, event, ctx.now);
@@ -121,8 +123,16 @@ function fromFrame(state, message, now) {
   if (message.type === "session_replaced") {
     return stay(state);
   }
+  const armed = view.status === "loading" ? [{ type: "clear_ready_timeout" }] : [];
+  if (message.type === "member_linked") {
+    if (!framed && view.status !== "ready") {
+      return stay(state);
+    }
+    const recent = recentReopens(state.linkReopens, now);
+    return recent.length < LINK_REOPENS_PER_GAP ? opening({ ...state, linkReopens: [...recent, now] }, "stale", armed) : ended(state, "session_expired", armed);
+  }
   if (framed) {
-    return ended(state, message.type, view.status === "loading" ? [{ type: "clear_ready_timeout" }] : []);
+    return ended(state, message.type, armed);
   }
   if (view.status !== "ready") {
     return stay(state);

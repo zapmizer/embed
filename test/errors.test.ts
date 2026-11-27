@@ -20,6 +20,7 @@ describe('action by error code', () => {
     ['origin_not_allowed', null],
     ['rejected', null],
     ['customer_without_phone', null],
+    ['attendant_removed', null],
     ['something_new_from_parli', null],
   ] as const)('%s → %p', (code, action) => {
     expect(actionFor(code)).toBe(action)
@@ -37,6 +38,7 @@ describe('code of a refused session', () => {
     ['the connection must be redone', { status: 422, code: 'reauth_required' }, 'reauth_required'],
     ['the subscription is inactive', { status: 422, code: 'subscription_required' }, 'subscription_required'],
     ['the customer has no phone', { status: 422, code: 'customer_without_phone' }, 'customer_without_phone'],
+    ['the owner removed the attendant', { status: 422, code: 'attendant_removed' }, 'attendant_removed'],
     ['Parli sent a code the lib does not know', { status: 422, code: 'brand_new_code' }, 'brand_new_code'],
     ['the code is empty', { status: 422, code: '' }, 'unavailable'],
   ])('when %s', (_, refusal, code) => {
@@ -112,10 +114,15 @@ describe('default messages', () => {
     'origin_not_allowed',
     'rejected',
     'customer_without_phone',
+    'attendant_removed',
   ]
 
   it.each(codes)('has a message for %s', (code) => {
     expect(defaultMessages[code]?.length ?? 0).toBeGreaterThan(0)
+  })
+
+  it('tells the attendant without access to ask the team owner, not to try again', () => {
+    expect(defaultMessages.attendant_removed).toBe('Você não tem mais acesso a este atendimento. Peça ao dono do time para liberar seu acesso de novo.')
   })
 
   it('never names a brand', () => {

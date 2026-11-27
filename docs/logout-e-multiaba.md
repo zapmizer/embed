@@ -40,5 +40,6 @@ A caixa de uma pessoa fica aberta em uma aba por vez. Quando outra aba do mesmo 
 - No clique em tentar de novo, a aba pega a caixa de volta: pede uma sessão nova, e agora é a outra aba que recebe `session_replaced`.
 - Com `storage: window.localStorage`, as abas dividem a retomada. No clique, a aba que perdeu a caixa primeiro tenta a entrada que a outra aba gravou e volta para a caixa dela, sem pedir sessão nova.
 - Uma caixa retomada que recebe `session_replaced` antes de ficar pronta segue, uma vez, a entrada que a outra aba gravou (com `localStorage`). Sem entrada nova, mostra o erro e esquece a própria entrada.
+- Com `localStorage`, duas abas visíveis podem estar na mesma caixa. Quando a sessão acaba nas duas ao mesmo tempo (`session_expired` ou [`member_linked`](caixa-de-entrada.md#member_linked)), cada aba pede uma sessão nova, e a que pediu primeiro recebe `session_replaced`. O clique em tentar de novo segue a entrada da outra aba, sem sessão nova.
 
 `sessionStorage` (o padrão) é de cada aba, então nada é dividido: cada aba retoma só a própria caixa.

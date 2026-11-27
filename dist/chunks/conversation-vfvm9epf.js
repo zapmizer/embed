@@ -18,7 +18,8 @@ var defaultMessages2 = {
   official_number_unsupported: "Ainda não funciona com número oficial do WhatsApp.",
   origin_not_allowed: "Este endereço ainda não foi liberado. Avise o suporte.",
   rejected: "A abertura foi recusada. Avise o suporte.",
-  customer_without_phone: "Cadastre um telefone para ver a conversa."
+  customer_without_phone: "Cadastre um telefone para ver a conversa.",
+  attendant_removed: "Você não tem mais acesso a este atendimento. Peça ao dono do time para liberar seu acesso de novo."
 };
 function actionFor2(code) {
   if (RETRY_CODES.has(code)) {

@@ -1,6 +1,6 @@
 export type Frame = 'none' | 'loading' | 'live' | 'stale';
 export type EmbedAction = 'retry' | 'reload' | 'reconnect' | 'checkout' | null;
-export type EmbedErrorCode = 'session_expired' | 'inbox_expired' | 'session_revoked' | 'session_replaced' | 'subscription_required' | 'ready_timeout' | 'unavailable' | 'rate_limited' | 'app_session_expired' | 'reauth_required' | 'connection_without_number' | 'number_unavailable' | 'approver_without_access' | 'official_number_unsupported' | 'origin_not_allowed' | 'rejected' | 'customer_without_phone' | (string & {});
+export type EmbedErrorCode = 'session_expired' | 'inbox_expired' | 'session_revoked' | 'session_replaced' | 'subscription_required' | 'ready_timeout' | 'unavailable' | 'rate_limited' | 'app_session_expired' | 'reauth_required' | 'connection_without_number' | 'number_unavailable' | 'approver_without_access' | 'official_number_unsupported' | 'origin_not_allowed' | 'rejected' | 'customer_without_phone' | 'attendant_removed' | (string & {});
 export type EmbedState = {
     status: 'opening';
     frame: 'none' | 'stale';

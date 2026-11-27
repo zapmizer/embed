@@ -2,7 +2,7 @@ import { actionFor, codeForRefusal } from '../errors.js'
 import type { EmbedEndType, EmbedMessage } from '../messages.js'
 import type { ResumeEntry } from '../resume.js'
 import type { EmbedErrorCode, MachineView, SessionOpened, SessionRefused } from '../state.js'
-import { canAutoReopen, failed } from './view.js'
+import { LINK_REOPENS_PER_GAP, canAutoReopen, failed, recentReopens } from './view.js'
 
 const RESUME_EFFECTS: ReadonlySet<string> = new Set(['read_resume', 'remember_resume', 'forget_resume_if', 'forget_other_resumes', 'forget_all_resumes'])
 
@@ -15,8 +15,10 @@ export function initialState(options: { resumable: boolean; visible: boolean }):
     ownResumeUrl: null,
     pendingResume: null,
     lastAutoReopenAt: null,
+    linkReopens: [],
     visible: options.visible,
     reopenOnShow: false,
+    linkOnShow: false,
     retryOnShow: false,
     resumeHopUsed: false,
     reading: null,
@@ -136,6 +138,7 @@ function openFresh(state: InboxMachine, frame: 'none' | 'stale', before: InboxEf
       pendingResume: null,
       resumeHopUsed: false,
       reopenOnShow: false,
+      linkOnShow: false,
       retryOnShow: false,
       reading: null,
     },
@@ -156,6 +159,7 @@ function loadResume(state: InboxMachine, entry: ResumeEntry, before: InboxEffect
       pendingResume: null,
       resumeHopUsed,
       reopenOnShow: false,
+      linkOnShow: false,
       retryOnShow: false,
       reading: null,
     },
@@ -227,6 +231,10 @@ function retry(state: InboxMachine): InboxStep {
 function visibility(state: InboxMachine, visible: boolean, now: number): InboxStep {
   const next = { ...state, visible }
 
+  if (visible && state.view.status === 'ready' && state.linkOnShow) {
+    return openFresh({ ...next, linkReopens: [...recentReopens(state.linkReopens, now), now] }, 'stale', [])
+  }
+
   if (visible && state.view.status === 'ready' && state.reopenOnShow) {
     return openFresh({ ...next, lastAutoReopenAt: now }, 'stale', [])
   }
@@ -256,6 +264,10 @@ function fromFrame(state: InboxMachine, message: EmbedMessage, now: number): Inb
     return waiting ? becomeReady(state, view.status === 'loading') : stay(state)
   }
 
+  if (message.type === 'member_linked') {
+    return waiting || view.status === 'ready' ? memberLinked(state, view.status === 'loading', now) : stay(state)
+  }
+
   if (waiting) {
     return endBeforeReady(state, message.type)
   }
@@ -277,6 +289,25 @@ function becomeReady(state: InboxMachine, armed: boolean): InboxStep {
     },
     effects: pending === null ? effects : [...effects, { type: 'remember_resume', entry: pending }],
   }
+}
+
+function memberLinked(state: InboxMachine, armed: boolean, now: number): InboxStep {
+  const before: InboxEffect[] = armed ? [{ type: 'clear_ready_timeout' }] : []
+
+  if (state.view.status === 'ready' && !state.visible) {
+    return { state: { ...state, reopenOnShow: false, linkOnShow: true }, effects: forgetOwn(state) }
+  }
+
+  const recent = recentReopens(state.linkReopens, now)
+
+  if (recent.length >= LINK_REOPENS_PER_GAP) {
+    return {
+      state: { ...state, view: failed('inbox_expired', 'none'), pendingResume: null, reopenOnShow: false, linkOnShow: false, retryOnShow: false },
+      effects: [...before, ...forgetOwn(state), { type: 'unmount_iframe' }],
+    }
+  }
+
+  return openFresh({ ...state, linkReopens: [...recent, now] }, 'stale', [...before, ...forgetOwn(state)])
 }
 
 function endBeforeReady(state: InboxMachine, type: EmbedEndType): InboxStep {
@@ -313,7 +344,7 @@ function endAfterReady(state: InboxMachine, type: EmbedEndType, now: number): In
   const code = type === 'session_expired' ? 'inbox_expired' : type
 
   return {
-    state: { ...state, view: failed(code, 'none'), reopenOnShow: false, retryOnShow: false },
+    state: { ...state, view: failed(code, 'none'), reopenOnShow: false, linkOnShow: false, retryOnShow: false },
     effects: [...forgetOwn(state), { type: 'unmount_iframe' }],
   }
 }
@@ -334,8 +365,10 @@ export type InboxMachine = {
   ownResumeUrl: string | null
   pendingResume: ResumeEntry | null
   lastAutoReopenAt: number | null
+  linkReopens: number[]
   visible: boolean
   reopenOnShow: boolean
+  linkOnShow: boolean
   retryOnShow: boolean
   resumeHopUsed: boolean
   reading: 'start' | 'replaced' | 'retry' | null

@@ -2,7 +2,7 @@ import {
   actionFor2,
   codeForRefusal2,
   toRefusal2
-} from "./conversation-8vvt7dm7.js";
+} from "./conversation-vfvm9epf.js";
 import {
   resumeKey2,
   defaultResumeStorage2,
@@ -13,10 +13,12 @@ import {
   forgetAllResumes2
 } from "./conversation-6md6txsp.js";
 import {
+  LINK_REOPENS_PER_GAP,
   failed,
   exposed,
-  canAutoReopen
-} from "./conversation-zyx12f77.js";
+  canAutoReopen,
+  recentReopens
+} from "./conversation-wy5dexxb.js";
 import {
   INBOX_FRAME,
   defaultClock,
@@ -25,7 +27,7 @@ import {
   requestSession,
   createFrameSlot,
   registerEmbed
-} from "./conversation-zmxh8xgq.js";
+} from "./conversation-qxh51kse.js";
 
 // src/machine/inbox.ts
 var RESUME_EFFECTS = new Set(["read_resume", "remember_resume", "forget_resume_if", "forget_other_resumes", "forget_all_resumes"]);
@@ -38,8 +40,10 @@ function initialState(options) {
     ownResumeUrl: null,
     pendingResume: null,
     lastAutoReopenAt: null,
+    linkReopens: [],
     visible: options.visible,
     reopenOnShow: false,
+    linkOnShow: false,
     retryOnShow: false,
     resumeHopUsed: false,
     reading: null
@@ -133,6 +137,7 @@ function openFresh(state, frame, before) {
       pendingResume: null,
       resumeHopUsed: false,
       reopenOnShow: false,
+      linkOnShow: false,
       retryOnShow: false,
       reading: null
     },
@@ -151,6 +156,7 @@ function loadResume(state, entry, before, resumeHopUsed) {
       pendingResume: null,
       resumeHopUsed,
       reopenOnShow: false,
+      linkOnShow: false,
       retryOnShow: false,
       reading: null
     },
@@ -205,6 +211,9 @@ function retry(state) {
 }
 function visibility(state, visible, now) {
   const next = { ...state, visible };
+  if (visible && state.view.status === "ready" && state.linkOnShow) {
+    return openFresh({ ...next, linkReopens: [...recentReopens(state.linkReopens, now), now] }, "stale", []);
+  }
   if (visible && state.view.status === "ready" && state.reopenOnShow) {
     return openFresh({ ...next, lastAutoReopenAt: now }, "stale", []);
   }
@@ -226,6 +235,9 @@ function fromFrame(state, message, now) {
   if (message.type === "ready") {
     return waiting ? becomeReady(state, view.status === "loading") : stay(state);
   }
+  if (message.type === "member_linked") {
+    return waiting || view.status === "ready" ? memberLinked(state, view.status === "loading", now) : stay(state);
+  }
   if (waiting) {
     return endBeforeReady(state, message.type);
   }
@@ -244,6 +256,20 @@ function becomeReady(state, armed) {
     },
     effects: pending === null ? effects : [...effects, { type: "remember_resume", entry: pending }]
   };
+}
+function memberLinked(state, armed, now) {
+  const before = armed ? [{ type: "clear_ready_timeout" }] : [];
+  if (state.view.status === "ready" && !state.visible) {
+    return { state: { ...state, reopenOnShow: false, linkOnShow: true }, effects: forgetOwn(state) };
+  }
+  const recent = recentReopens(state.linkReopens, now);
+  if (recent.length >= LINK_REOPENS_PER_GAP) {
+    return {
+      state: { ...state, view: failed("inbox_expired", "none"), pendingResume: null, reopenOnShow: false, linkOnShow: false, retryOnShow: false },
+      effects: [...before, ...forgetOwn(state), { type: "unmount_iframe" }]
+    };
+  }
+  return openFresh({ ...state, linkReopens: [...recent, now] }, "stale", [...before, ...forgetOwn(state)]);
 }
 function endBeforeReady(state, type) {
   if (state.via === "resume" && type === "session_expired") {
@@ -272,7 +298,7 @@ function endAfterReady(state, type, now) {
   }
   const code = type === "session_expired" ? "inbox_expired" : type;
   return {
-    state: { ...state, view: failed(code, "none"), reopenOnShow: false, retryOnShow: false },
+    state: { ...state, view: failed(code, "none"), reopenOnShow: false, linkOnShow: false, retryOnShow: false },
     effects: [...forgetOwn(state), { type: "unmount_iframe" }]
   };
 }

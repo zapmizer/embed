@@ -16,8 +16,10 @@ export type InboxMachine = {
     ownResumeUrl: string | null;
     pendingResume: ResumeEntry | null;
     lastAutoReopenAt: number | null;
+    linkReopens: number[];
     visible: boolean;
     reopenOnShow: boolean;
+    linkOnShow: boolean;
     retryOnShow: boolean;
     resumeHopUsed: boolean;
     reading: 'start' | 'replaced' | 'retry' | null;

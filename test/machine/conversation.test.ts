@@ -20,8 +20,14 @@ function opened(gen: number, url: string = URL_A): ConversationEvent {
   return { type: 'session_opened', gen, session: { url, origin: ORIGIN } }
 }
 
-function frame(type: 'ready' | 'session_expired' | 'session_revoked' | 'subscription_required' | 'session_replaced'): ConversationEvent {
+function frame(type: 'ready' | 'member_linked' | 'session_expired' | 'session_revoked' | 'subscription_required' | 'session_replaced'): ConversationEvent {
   return { type: 'iframe', message: { type } }
+}
+
+function linkCycle(state: ConversationMachine, at: number): ConversationMachine {
+  const linked = step(state, frame('member_linked'), at).state
+
+  return [opened(linked.gen, URL_B), frame('ready')].reduce((next, event) => step(next, event, at).state, linked)
 }
 
 const opening = (): ConversationMachine => through([{ type: 'start' }])
@@ -142,6 +148,97 @@ describe('conversation machine — table', () => {
 
     expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'session_expired', action: 'retry' })
     expect(result.effects).toEqual([{ type: 'unmount_iframe' }, { type: 'notify' }])
+  })
+
+  it('ready + member_linked → opening(stale), open_session, lastAutoReopenAt untouched', () => {
+    const result = step(ready(), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.lastAutoReopenAt).toBeNull()
+    expect(result.effects).toEqual([{ type: 'open_session', gen: 1 }, { type: 'notify' }])
+  })
+
+  it('member_linked does not count as an automatic reopening: session_expired right after still reopens', () => {
+    const linked = step(ready(), frame('member_linked')).state
+    const readyAgain = [opened(1, URL_B), frame('ready')].reduce((state, event) => step(state, event).state, linked)
+    const result = step(readyAgain, frame('session_expired'), NOW + 1_000)
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.lastAutoReopenAt).toBe(NOW + 1_000)
+  })
+
+  it('member_linked right after an automatic reopening still opens a new session', () => {
+    const readyAgain = step(step(reopening(), opened(1, URL_B)).state, frame('ready')).state
+    const result = step(readyAgain, frame('member_linked'), NOW + 1_000)
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.lastAutoReopenAt).toBe(NOW)
+  })
+
+  it('loading + member_linked → opening(stale), clear_ready_timeout, open_session', () => {
+    const result = step(loading(), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.effects).toEqual([{ type: 'clear_ready_timeout' }, { type: 'open_session', gen: 1 }, { type: 'notify' }])
+    expect(step(result.state, frame('ready'))).toEqual({ state: result.state, effects: [] })
+  })
+
+  it('error(loading) + member_linked → opening(stale), open_session', () => {
+    const result = step(timedOut(), frame('member_linked'))
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.effects).toEqual([{ type: 'open_session', gen: 1 }, { type: 'notify' }])
+  })
+
+  it('link then unlink 20 s later → both reopen, without an error', () => {
+    const result = step(linkCycle(ready(), NOW), frame('member_linked'), NOW + 20_000)
+
+    expect(result.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(result.state.linkReopens).toEqual([NOW, NOW + 20_000])
+  })
+
+  it('a third member_linked < 60 s after the first of two reopenings → error(session_expired, none), unmount_iframe', () => {
+    const twice = linkCycle(linkCycle(ready(), NOW), NOW + 20_000)
+    const result = step(twice, frame('member_linked'), NOW + 59_999)
+
+    expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'session_expired', action: 'retry' })
+    expect(result.effects).toEqual([{ type: 'unmount_iframe' }, { type: 'notify' }])
+  })
+
+  it('a third member_linked < 60 s, before ready → error, clear_ready_timeout', () => {
+    const linkedAgain = step(linkCycle(ready(), NOW), frame('member_linked'), NOW + 1_000).state
+    const loadingAgain = step(linkedAgain, opened(linkedAgain.gen, URL_B)).state
+    const result = step(loadingAgain, frame('member_linked'), NOW + 2_000)
+
+    expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'session_expired', action: 'retry' })
+    expect(result.effects).toEqual([{ type: 'clear_ready_timeout' }, { type: 'unmount_iframe' }, { type: 'notify' }])
+  })
+
+  it('the window slides: a reopening older than 60 s stops counting', () => {
+    const twice = linkCycle(linkCycle(ready(), NOW), NOW + 20_000)
+    const third = step(twice, frame('member_linked'), NOW + 60_000)
+
+    expect(third.state.view).toEqual({ status: 'opening', frame: 'stale' })
+    expect(third.state.linkReopens).toEqual([NOW + 20_000, NOW + 60_000])
+  })
+
+  it('member_linked + refusal → error with the action of the code and the stale iframe unmounted', () => {
+    const linked = step(ready(), frame('member_linked')).state
+    const result = step(linked, { type: 'session_refused', gen: linked.gen, refusal: { status: 422, code: 'attendant_removed' } })
+
+    expect(result.state.view).toEqual({ status: 'error', frame: 'none', code: 'attendant_removed', action: null })
+    expect(result.effects).toEqual([{ type: 'unmount_iframe' }, { type: 'notify' }])
+  })
+
+  it.each([
+    ['idle', () => initialState()],
+    ['opening', opening],
+    ['opening(stale), from the old iframe', () => step(ready(), frame('member_linked')).state],
+    ['error(none)', () => step(ready(), frame('session_revoked')).state],
+  ] as const)('%s ignores member_linked', (_, state) => {
+    const before = state()
+
+    expect(step(before, frame('member_linked'))).toEqual({ state: before, effects: [] })
   })
 
   it.each([
